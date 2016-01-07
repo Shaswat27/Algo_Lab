@@ -130,54 +130,56 @@ void ifft(int n, complex F[], complex B[])
 		
 void main()
 {
-	complex A[8], B[8];
-	int n = 8;
+	complex A[4], B[4], C[4];
+	int n = 4;
+	int i = 0;
 	
+	//A = 21
 	A[0].re = 1.0;
 	A[0].im = 0.0;
 
 	A[1].re = 2.0;
 	A[1].im = 0.0;
 	
-	A[2].re = 3.0;
+	A[2].re = 0.0;
 	A[2].im = 0.0;
 	
-	A[3].re = 4.0;
+	A[3].re = 0.0;
 	A[3].im = 0.0;
-    
-    A[4].re = 5.0;
-	A[4].im = 0.0;
 
-	A[5].re = 6.0;
-	A[5].im = 0.0;
+    //B = 43
+    B[0].re = 3.0;
+	B[0].im = 0.0;
 
-	A[6].re = 7.0;
-	A[6].im = 0.0;
+	B[1].re = 4.0;
+	B[1].im = 0.0;
 
-	A[7].re = 8.0;
-	A[7].im = 0.0;
+	B[2].re = 0.0;
+	B[2].im = 0.0;
 
+	B[3].re = 0.0;
+	B[3].im = 0.0;
 	
-	complex F[8];
+	complex FA[4],FB[4],FC[4];
 	
-	fft(n, A, F);
+	fft(n, A, FA);
+	fft(n, B, FB);
 
-	ifft(n, F, B);
-
-	int i = 0;
-
-	for(i=0; i<n; i++)
+	for (i=0;i<n;i++)
 	{
-		B[i].re /= n;
-		B[i].im /= n;
+		FC[i].re = FA[i].re*FB[i].re - FA[i].im*FB[i].im;
+		FC[i].im = FA[i].re*FB[i].im + FA[i].im*FB[i].re;
 	}
 
-	printf("FFT of A: \n");
-	for (i=0; i<n; i++)
-	 printf("%f + %fi \n",F[i].re,F[i].im);
+	ifft(n, FC, C);	
+	
+	for(i=0; i<n; i++)
+	{
+		C[i].re /= n;
+		C[i].im /= n;
+	}
 
-	printf("IFFT of F: \n");
+	printf("IFFT of FC: \n");
 	for (i=0; i<n; i++)
-	 printf("%f + %fi \n",B[i].re,B[i].im);
-
+	 printf("%f + %fi \n",C[i].re,C[i].im);
 }
