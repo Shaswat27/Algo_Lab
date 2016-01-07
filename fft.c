@@ -1,15 +1,18 @@
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 #define PI 3.141592
 
+//defining a complex number
 typedef struct c
 {
 	double re;
 	double im;
 } complex;
 
-void fft(int n, complex A[], complex F[])
+//function to calculate fast fourier transform, n = 2^d
+void fft(int n, complex *A, complex *F)
 {
 	int k, j;
 	complex omegak;
@@ -17,8 +20,12 @@ void fft(int n, complex A[], complex F[])
 		        F[0].im = A[0].im;
 		        return ;
 		      }
-	complex E[100], O[100], EF[100], OF[100];
-		
+
+	complex *E = (complex *)(malloc((n/2)*sizeof(complex)));
+	complex *O = (complex *)(malloc((n/2)*sizeof(complex)));
+	complex *EF = (complex *)(malloc((n/2)*sizeof(complex)));
+	complex *OF = (complex *)(malloc((n/2)*sizeof(complex)));
+	
 	for (j=k=0; k<n; j++,k=k+2)
 	{
 		E[j].re = A[k].re;
@@ -27,9 +34,7 @@ void fft(int n, complex A[], complex F[])
 		O[j].re = A[k+1].re;
 		O[j].im = A[k+1].im;
 
-	}
-	
-	
+	}	
 	
 	fft(n/2, E, EF);
 	fft(n/2, O, OF);
@@ -67,8 +72,8 @@ void fft(int n, complex A[], complex F[])
 	}
 }
 
-
-void ifft(int n, complex F[], complex B[])
+//function to calculate inverse fast fourier tranform, n = 2^d 
+void ifft(int n, complex *F, complex *B)
 {
 	int k, j;
 	complex omegak;
@@ -76,7 +81,11 @@ void ifft(int n, complex F[], complex B[])
 		        B[0].im = F[0].im;
 		        return ;
 		      }
-	complex E[100], O[100], EF[100], OF[100];
+
+	complex *E = (complex *)(malloc((n/2)*sizeof(complex)));
+	complex *O = (complex *)(malloc((n/2)*sizeof(complex)));
+	complex *EF = (complex *)(malloc((n/2)*sizeof(complex)));
+	complex *OF = (complex *)(malloc((n/2)*sizeof(complex)));
 		
 	for (j=k=0; k<n; j++,k=k+2)
 	{
@@ -130,56 +139,80 @@ void ifft(int n, complex F[], complex B[])
 		
 void main()
 {
-	complex A[4], B[4], C[4];
-	int n = 4;
-	int i = 0;
+	int n=3, m=3, i=0; //degree 2, degree 2
 	
-	//A = 21
-	A[0].re = 1.0;
-	A[0].im = 0.0;
+	double temp = m+n; // final degree = m+n-2
+	double d = log(temp)/log(2.0);
+	int tmp =  (int)(d)+1;
+	double p = pow(2.0,tmp);
+	int size = (int)(p); // size s.t. size = 2^d and size>m+n
 
-	A[1].re = 2.0;
-	A[1].im = 0.0;
-	
-	A[2].re = 0.0;
-	A[2].im = 0.0;
-	
-	A[3].re = 0.0;
-	A[3].im = 0.0;
+	complex *N = (complex *)(malloc(size*sizeof(complex)));
+	complex *M = (complex *)(malloc(size*sizeof(complex)));
+	complex *C = (complex *)(malloc(size*sizeof(complex)));
 
-    //B = 43
-    B[0].re = 3.0;
-	B[0].im = 0.0;
-
-	B[1].re = 4.0;
-	B[1].im = 0.0;
-
-	B[2].re = 0.0;
-	B[2].im = 0.0;
-
-	B[3].re = 0.0;
-	B[3].im = 0.0;
-	
-	complex FA[4],FB[4],FC[4];
-	
-	fft(n, A, FA);
-	fft(n, B, FB);
-
-	for (i=0;i<n;i++)
+	for(i=0; i<size; i++)
 	{
-		FC[i].re = FA[i].re*FB[i].re - FA[i].im*FB[i].im;
-		FC[i].im = FA[i].re*FB[i].im + FA[i].im*FB[i].re;
+		N[i].re = 0.0;
+		N[i].im = 0.0;
+
+		M[i].re = 0.0;
+		M[i].im = 0.0;
 	}
 
-	ifft(n, FC, C);	
-	
-	for(i=0; i<n; i++)
+	N[0].re = 9.0;
+	N[1].re = 9.0;
+	N[2].re = 9.0;
+
+	M[0].re = 9.0;
+	M[1].re = 9.0;
+	M[2].re = 9.0;
+
+	complex *FN = (complex *)(malloc(size*sizeof(complex))); //to store the fourier transform of N
+	complex *FM = (complex *)(malloc(size*sizeof(complex))); //to store the fourier transform of M
+	complex *FC = (complex *)(malloc(size*sizeof(complex))); //to store the fourier transform of product
+
+	fft(size, N, FN);
+	fft(size, M, FM);
+
+	for (i=0;i<size;i++)
 	{
-		C[i].re /= n;
-		C[i].im /= n;
+		FC[i].re = FN[i].re*FM[i].re - FN[i].im*FM[i].im;
+		FC[i].im = FN[i].re*FM[i].im + FN[i].im*FM[i].re;
 	}
 
+	ifft(size, FC, C);	
+	
+	for(i=0; i<size; i++)
+	{
+		C[i].re /= size;
+		C[i].im /= size;
+	}
+
+	/*
 	printf("IFFT of FC: \n");
-	for (i=0; i<n; i++)
-	 printf("%f + %fi \n",C[i].re,C[i].im);
+	for (i=0; i<size; i++)
+	 printf("%f + %fi \n",C[i].re,C[i].im);*/
+
+	//Now create the number
+	for(i=0; i<size-1; i++)
+	{
+		int temp = (int)(round(C[i].re));
+		int carry = temp/10;
+		int digit = temp%10;
+		C[i].re = digit;
+		C[i+1].re += carry;
+	}
+
+	//display the product
+	int flag = 0;
+	printf("Product: \n");
+	for (i=size-1; i>=0; i--)
+	{	
+		if( (int)(C[i].re) != 0 ) flag = 1;
+		if (flag)
+			printf("%d",(int)(C[i].re));
+	}
+	printf("\n");
+
 }
