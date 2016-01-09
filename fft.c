@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define PI 3.141592
 
@@ -139,8 +140,13 @@ void ifft(int n, complex *F, complex *B)
 		
 void main()
 {
-	int n=3, m=3, i=0; //degree 2, degree 2
+	int n, m, i=0; //number of digits in first number, number of digits in second number
 	
+	printf("Enter the number of digits in the first number: ");
+	scanf("%d",&n);
+	printf("\nEnter the number of digits in the second number: ");
+	scanf("%d",&m);
+
 	double temp = m+n; // final degree = m+n-2
 	double d = log(temp)/log(2.0);
 	int tmp =  (int)(d)+1;
@@ -151,22 +157,39 @@ void main()
 	complex *M = (complex *)(malloc(size*sizeof(complex)));
 	complex *C = (complex *)(malloc(size*sizeof(complex)));
 
+	srand(time(NULL));
 	for(i=0; i<size; i++)
 	{
-		N[i].re = 0.0;
-		N[i].im = 0.0;
-
-		M[i].re = 0.0;
-		M[i].im = 0.0;
+		if(i<n && i<m) //create the numbers
+		{
+			N[i].re = rand()%10;
+			N[i].im = 0.0;
+			M[i].re = rand()%10;
+			M[i].im = 0.0;
+		}
+		else if(i>=n && i<m)
+		{
+			N[i].re = 0.0;
+			N[i].im = 0.0;
+			M[i].re = rand()%10;
+			M[i].im = 0.0;
+		}
+		else if(i<n && i>=m)
+		{
+			N[i].re = rand()%10;
+			N[i].im = 0.0;
+			M[i].re = 0.0;
+			M[i].im = 0.0;
+		}
+		else
+		{
+			N[i].re = 0.0;
+			N[i].im = 0.0;
+			M[i].re = 0.0;
+			M[i].im = 0.0;
+		}
+		
 	}
-
-	N[0].re = 9.0;
-	N[1].re = 9.0;
-	N[2].re = 9.0;
-
-	M[0].re = 9.0;
-	M[1].re = 9.0;
-	M[2].re = 9.0;
 
 	complex *FN = (complex *)(malloc(size*sizeof(complex))); //to store the fourier transform of N
 	complex *FM = (complex *)(malloc(size*sizeof(complex))); //to store the fourier transform of M
@@ -204,9 +227,22 @@ void main()
 		C[i+1].re += carry;
 	}
 
+	//display the numbers
+	printf("\nFirst number: \n");
+	for (i=n-1; i>=0; i--)
+	{	
+		printf("%d",(int)(N[i].re));
+	}
+
+	printf("\nSecond number: \n");
+	for (i=m-1; i>=0; i--)
+	{	
+		printf("%d",(int)(M[i].re));
+	}
+
 	//display the product
 	int flag = 0;
-	printf("Product: \n");
+	printf("\nProduct: \n");
 	for (i=size-1; i>=0; i--)
 	{	
 		if( (int)(C[i].re) != 0 ) flag = 1;
