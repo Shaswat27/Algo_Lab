@@ -51,7 +51,8 @@ void fill(int **A, int r, int c, int r1, int c1, int n, int k) //board, row of m
 	}
 	//r = n/2;
 	//c = n/2-1;	
-	fill(A, r1+n/2, c1+n/2-1, r1+n/2-1, c1+n/2-1, 2, k+5); 
+	k+=5;
+	fill(A, r1+n/2, c1+n/2-1, r1+n/2-1, c1+n/2-1, 2, k); 
 	if(flag) A[n/2+r1][n/2-1+c1]=0;
 
 	//now divide into four blocks and do the same
@@ -70,7 +71,8 @@ void fill(int **A, int r, int c, int r1, int c1, int n, int k) //board, row of m
 	}
 	//r = n/2-1;
 	//c = n/2-1;	
-	fill(A, r1+n/2-1, c1+n/2-1, r1+n/2-1, c1+n/2-1, 2, k+10);
+	k+=10;
+	fill(A, r1+n/2-1, c1+n/2-1, r1+n/2-1, c1+n/2-1, 2, k);
 	if(flag) A[n/2-1+r1][n/2-1+c1]=0; 
 
 	//now divide into four blocks and do the same
@@ -89,7 +91,8 @@ void fill(int **A, int r, int c, int r1, int c1, int n, int k) //board, row of m
 	}
 	//r = n/2-1;
 	//c = n/2-1;
-	fill(A, r1+n/2-1, c1+n/2, r1+n/2-1, c1+n/2-1, 2, k+15);
+	k+=15;
+	fill(A, r1+n/2-1, c1+n/2, r1+n/2-1, c1+n/2-1, 2, k);
 	if(flag) A[n/2-1+r1][n/2+c1]=0; 
 
 	//now divide into four blocks and do the same
