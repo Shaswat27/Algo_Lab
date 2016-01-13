@@ -8,6 +8,14 @@ typedef struct p
   double y;
 } point;
 
+typedef struct q
+{
+  point p1;
+  point p2;
+  double d;
+} pair;
+
+
 void merge(point *p, int l, int m, int r, char dim)
 {
     int i, j, k;
@@ -97,26 +105,34 @@ double norm(point p1, point p2)
   return n;
 }
 
-double min_strip(point *strip, int size, double d)
+pair min_strip(point *strip, int size, double dist)
 {
   int i,j;
-  double d_strip = d;
+  pair d_strip;
+  d_strip.d = dist;
   
   for(i=0;i<size;i++)
   {
-    for(j=i+1; j<size && (strip[j].y - strip[i].y)<d_strip; j++)
+    for(j=i+1; j<size && (strip[j].y - strip[i].y)<d_strip.d; j++)
     {
-      if(norm(strip[i],strip[j])<d_strip)
-        d_strip = norm(strip[i],strip[j]);
+      if(norm(strip[i],strip[j])<d_strip.d)
+      {
+        d_strip.d = norm(strip[i],strip[j]);
+        d_strip.p1 = strip[i];
+        d_strip.p2 = strip[j];
+      }
     }
   }
   return d_strip;
 }
 
-double find_closest(point *px, point *py, int n)
+pair find_closest(point *px, point *py, int n)
 {
   int i, j, k=0, l=0; //iterators
-  double d = 10000, d_copy=10000; //change to max double
+  pair dist;
+  dist.d = 10000; //change to max double
+  pair m;
+  m.d = 10000; 
   if(n<=3)
   {
     for(i=0;i<n;i++)
@@ -124,10 +140,15 @@ double find_closest(point *px, point *py, int n)
       for(j=i+1;j<n;j++)
       {
 	double temp = norm(px[i], px[j]);
-	if(temp<d_copy) d_copy = temp;
+	if(temp<m.d) 
+        {
+          m.d = temp;
+	  m.p1 = px[i];
+	  m.p2 = px[j];
+        }
       }
     }
-    return d_copy;
+    return m;
   }
 
   //divide step
@@ -146,27 +167,27 @@ double find_closest(point *px, point *py, int n)
   }
 
   //recursive calls:
-  double dl = find_closest(px, py_left, mid);
-  double dr = find_closest(px+mid, py_right, n-mid);
+  pair dl = find_closest(px, py_left, mid);
+  pair dr = find_closest(px+mid, py_right, n-mid);
   
   //store min of these two distances
-  d = (dl<dr)?(dl):(dr);
+  dist = (dl.d<dr.d)?(dl):(dr);
   
   //create a strip of size d on either side of median, max size can be n at max
   j=0;
-  point vstrip[100];//=(point *)malloc(n*sizeof(point));
+  point *vstrip = (point *)malloc(n*sizeof(point));
   
   for(i=0;i<n;i++)
   {
-    if( abs(py[i].x - median.x)<d )
+    if( abs(py[i].x - median.x)<dist.d )
       {vstrip[j] = py[i]; j++;}
   }
 
-  double d_strip = min_strip(vstrip, j, d);
+  pair d_strip = min_strip(vstrip, j, dist.d);
 
-  d = (d_strip<d)?(d_strip):d;
+  dist = (d_strip.d<dist.d)?(d_strip):(dist);
 
-  return d;
+  return dist;
 }
 
 
@@ -203,7 +224,8 @@ int main()
   //arrays px, py created
   
   //find the closest pair
-  printf("\nClosest distance = %lf\n",find_closest(px,py,n));
+  pair pr = find_closest(px,py,n);
+  printf("\nClosest distance = %lf, between (%lf,%lf) and (%lf, %lf)\n",pr.d, pr.p1.x, pr.p1.y, pr.p2.x, pr.p2.y);
   
   return 0;
 }
