@@ -27,19 +27,21 @@ result *merge(result *r1, result *r2, int n1, int n2, int *r_size)
         //Compare x coordinates of left sides
         if (r1[i].x < r2[j].x)
         {
-            r_final[k].x = r1[i].x;
             h1 = r1[i].y;
             //Choose height as max of two heights
             double h = (h1>h2)?(h1):(h2);
- 			r_final[k++].y = h;          
+            if(k>1) if(r_final[k-1].y == h) {i++;continue;}
+            r_final[k].x = r1[i].x;
+ 	    r_final[k++].y = h;          
             i++;
         }
         else
         {
-            r_final[k].x = r2[j].x;
             h2 = r2[j].y;
             //Choose height as max of two heights
             double h = (h1>h2)?(h1):(h2);
+	    if(k>1) if(r_final[k-1].y == h) {j++;continue;}
+            r_final[k].x = r2[j].x;
             r_final[k++].y = h;
             j++;
         }
