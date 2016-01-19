@@ -30,7 +30,7 @@ result *merge(result *r1, result *r2, int n1, int n2, int *r_size)
             h1 = r1[i].y;
             //Choose height as max of two heights
             double h = (h1>h2)?(h1):(h2);
-            if(k>1) if(r_final[k-1].y == h) {i++;continue;}
+            if(k>0) if(r_final[k-1].y == h) {i++;continue;}
             r_final[k].x = r1[i].x;
  	    r_final[k++].y = h;          
             i++;
@@ -40,7 +40,7 @@ result *merge(result *r1, result *r2, int n1, int n2, int *r_size)
             h2 = r2[j].y;
             //Choose height as max of two heights
             double h = (h1>h2)?(h1):(h2);
-	    if(k>1) if(r_final[k-1].y == h) {j++;continue;}
+	    if(k>0) if(r_final[k-1].y == h) {j++;continue;}
             r_final[k].x = r2[j].x;
             r_final[k++].y = h;
             j++;
@@ -76,18 +76,18 @@ result *skyline(building *b, int start, int end, int *r_size) //parameters - arr
 		r[1].y = 0.0;
 		*r_size = 2.0;
 		
-		printf("\nStopping:\n");
+		/*printf("\nStopping:\n");
 		int i=0;
 		for(;i<(*r_size);i++)
 		{
 			printf("(%lf, %lf)\n",r[i].x, r[i].y);
-		}
+		}*/
 		
 		return r;
 	}
 	
 	int n = (end-start); //number of buildings - 1
-	printf("\nn=%d\n", n);
+	//printf("\nn=%d\n", n);
 	result *r1 = (result *)malloc(2*n*sizeof(result));
 	result *r2 = (result *)malloc(2*n*sizeof(result));
 	 
@@ -97,7 +97,7 @@ result *skyline(building *b, int start, int end, int *r_size) //parameters - arr
 	int n_r2 = *r_size; 
 	result *r_final = (result *)malloc(2*n*sizeof(result));
 	
-	printf("\nMerge:\n");
+	/*printf("\nMerge:\n");
 	int i=0;
 	for(;i<n_r1;i++)
 	{
@@ -107,7 +107,7 @@ result *skyline(building *b, int start, int end, int *r_size) //parameters - arr
 	for(i=0;i<n_r2;i++)
 	{
 		printf("(%lf, %lf)\n",r2[i].x, r2[i].y);
-	}
+	}*/
 
         r_final = merge(r1,r2, n_r1, n_r2, r_size);
 	
@@ -116,29 +116,45 @@ result *skyline(building *b, int start, int end, int *r_size) //parameters - arr
 
 int main()
 {
-	building *b = (building *)malloc(4*sizeof(building));
+	building *b = (building *)malloc(8*sizeof(building));
 	int r_size = 0;
 	
-	b[0].l = 0.0;
-	b[0].r = 2.0;
-	b[0].h = 7.0;
+	b[0].l = 1.0;
+	b[0].r = 5.0;
+	b[0].h = 11.0;
 	
-	b[1].l = 1.0;
-	b[1].r = 4.0;
-	b[1].h = 10.0;
+	b[1].l = 2.0;
+	b[1].r = 7.0;
+	b[1].h = 6.0;
 
-	b[2].l = 2.0;
-	b[2].r = 6.0;
-	b[2].h = 5.0;
+	b[2].l = 3.0;
+	b[2].r = 9.0;
+	b[2].h = 13.0;
 	
-	b[3].l = 3.0;
-	b[3].r = 7.0;
+	b[3].l = 12.0;
+	b[3].r = 16.0;
 	b[3].h = 7.0;
+
+        b[4].l = 14.0;
+	b[4].r = 25.0;
+	b[4].h = 3.0;
 	
-	result *r = skyline(b, 0, 3, &r_size);
+	b[5].l = 19.0;
+	b[5].r = 22.0;
+	b[5].h = 18.0;
+
+	b[6].l = 23.0;
+	b[6].r = 29.0;
+	b[6].h = 13.0;
+	
+	b[7].l = 24.0;
+	b[7].r = 28.0;
+	b[7].h = 4.0;
+	
+	result *r = skyline(b, 0, 7, &r_size);
 	
 	int i=0;
-	printf("\nr_size = %d\n", r_size);
+	//printf("\nr_size = %d\n", r_size);
 	for(;i<r_size;i++)
 	{
 		printf("(%lf, %lf)\n",r[i].x, r[i].y);
