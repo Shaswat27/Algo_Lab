@@ -92,7 +92,13 @@ result find_intersection(result p1, result p2, result q1, result q2)
 
 		r.y = p1.y + m1*(r.x-p1.x);
 	}
-	else {}
+	else 
+	{
+		r.x = q1.x;
+		double p_max = (p1.y>p2.y?p1.y:p2.y);
+		double q_max = (q1.y>q2.y?q1.y:q2.y);
+		r.y = (p_max>q_max?p_max:q_max);	
+	}
 			
 	double p_y_max = (p1.y>p2.y)?p1.y:p2.y;
 	double q_y_max = (q1.y>q2.y)?q1.y:q2.y;
@@ -296,66 +302,87 @@ result *skyline(building *b, int start, int end, int *r_size) //parameters - arr
 
 int main()
 {
-	building *b = (building *)malloc(2*sizeof(building));
+	srand(time(NULL));	
+	double x_min, x_max, y_max;
+	int n;
+	printf("\nEnter the minimum x coordinate: \n");
+	scanf("%lf", &x_min);
+    printf("\nEnter the maximum x coordinate: \n");
+	scanf("%lf", &x_max);
+    printf("\nEnter the maximum y coordinate: \n");
+	scanf("%lf", &y_max);
+	printf("\nEnter the number of buildings: \n");
+	scanf("%d", &n);
+	
+	building *b = (building *)malloc(n*sizeof(building));
 	int r_size = 0;
-	
-	b[0].l1 = 0.0;
-	b[0].h1 = 10.0;
-	b[0].l2 = 2.0;
-	b[0].h2 = 8.0;
-	
-	b[1].l1 = 1.0;
-	b[1].h1 = 6.0;
-	b[1].l2 = 4.0;
-	b[1].h2 = 15.0;
 
-	b[2].l1 = 3.0;
-	b[2].h1 = 7.5;
-	b[2].l2 = 6.0;
-	b[2].h2 = 9.0;
-
-	b[3].l1 = 5.0;
-	b[3].h1 = 4.0;
-	b[3].l2 = 9.0;
-	b[3].h2 = 4.0;
-
-
-	b[4].l1 = 0.0+10.0;
-	b[4].h1 = 10.0;
-	b[4].l2 = 2.0+10.0;
-	b[4].h2 = 8.0;
-	
-	b[5].l1 = 1.0+10.0;
-	b[5].h1 = 6.0;
-	b[5].l2 = 4.0+10.0;
-	b[5].h2 = 15.0;
-
-	b[6].l1 = 3.0+10.0;
-	b[6].h1 = 7.5;
-	b[6].l2 = 6.0+10.0;
-	b[6].h2 = 9.0;
-
-	b[7].l1 = 5.0+10.0;
-	b[7].h1 = 4.0;
-	b[7].l2 = 9.0+10.0;
-	b[7].h2 = 4.0;
-	result *r = skyline(b, 0, 7, &r_size);
-	
 	int i=0;
-	//printf("\nr_size = %d\n", r_size);
-	for(;i<r_size;i++)
+	for(;i<n;i++)
 	{
-		printf("(%lf, %lf)\n",r[i].x, r[i].y);
+		b[i].l1 = 1 + x_min + (rand())%((int)(x_max-x_min-1));
+		b[i].l2 = b[i].l1 + 1 + (rand())%((int)(x_max-b[i].l1-1));
+		b[i].h1 = 1 + (rand())%((int)y_max);
+		b[i].h2 = 1 + (rand())%((int)y_max);
+	}	
+
+	i=0;
+	printf("\nThe buildings are (left x, height, right x, height): ");
+	for(;i<n;i++)
+	{
+		printf("(%lf, %lf, %lf, %lf) ",b[i].l1, b[i].h1, b[i].l2, b[i].h2);
 	}
 
+	/*b[1].l1 = 0.0;
+	b[1].h1 = 10.0;
+	b[1].l2 = 2.0;
+	b[1].h2 = 8.0;
 	
-	/*result p1 = {0.0,0.0};
-	result p2 = {1.0,0.0};
-	result q1 = {0.0,0.5};
-	result q2 = {0.5,1.0};
+	b[0].l1 = 1.0;
+	b[0].h1 = 6.0;
+	b[0].l2 = 4.0;
+	b[0].h2 = 15.0;
 
-	result r = find_intersection(p1,p2,q1,q2);*/
-	//printf("\nIntersection: (%lf,%lf)\n",r.x,r.y);
+	b[3].l1 = 3.0;
+	b[3].h1 = 7.5;
+	b[3].l2 = 6.0;
+	b[3].h2 = 9.0;
+
+	b[6].l1 = 5.0;
+	b[6].h1 = 4.0;
+	b[6].l2 = 9.0;
+	b[6].h2 = 4.0;
+
+
+	b[5].l1 = 0.0+10.0;
+	b[5].h1 = 10.0;
+	b[5].l2 = 2.0+10.0;
+	b[5].h2 = 8.0;
+	
+	b[6].l1 = 1.0+10.0;
+	b[6].h1 = 6.0;
+	b[6].l2 = 4.0+10.0;
+	b[6].h2 = 15.0;
+
+	b[7].l1 = 3.0+10.0;
+	b[7].h1 = 7.5;
+	b[7].l2 = 6.0+10.0;
+	b[7].h2 = 9.0;
+
+	b[2].l1 = 5.0+10.0;
+	b[2].h1 = 4.0;
+	b[2].l2 = 9.0+10.0;
+	b[2].h2 = 4.0;*/
+
+	result *r = skyline(b, 0, n-1, &r_size);
+	
+	i=0;
+	printf("\nThe contour is (x,y): ");
+	for(;i<r_size;i++)
+	{
+		printf("(%lf, %lf) ",r[i].x, r[i].y);
+	}	
+	printf("\n");
 	return 0;
 }
 

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 typedef struct b
 {
@@ -116,49 +117,77 @@ result *skyline(building *b, int start, int end, int *r_size) //parameters - arr
 
 int main()
 {
-	building *b = (building *)malloc(8*sizeof(building));
+	srand(time(NULL));	
+	double x_min, x_max, y_max;
+	int n;
+	printf("\nEnter the minimum x coordinate: \n");
+	scanf("%lf", &x_min);
+    printf("\nEnter the maximum x coordinate: \n");
+	scanf("%lf", &x_max);
+    printf("\nEnter the maximum y coordinate: \n");
+	scanf("%lf", &y_max);
+	printf("\nEnter the number of buildings: \n");
+	scanf("%d", &n);
+	
+	building *b = (building *)malloc(n*sizeof(building));
 	int r_size = 0;
-	
-	b[0].l = 1.0;
-	b[0].r = 5.0;
-	b[0].h = 11.0;
-	
-	b[1].l = 2.0;
-	b[1].r = 7.0;
-	b[1].h = 6.0;
 
-	b[2].l = 3.0;
-	b[2].r = 9.0;
-	b[2].h = 13.0;
-	
-	b[3].l = 12.0;
-	b[3].r = 16.0;
-	b[3].h = 7.0;
-
-        b[4].l = 14.0;
-	b[4].r = 25.0;
-	b[4].h = 3.0;
-	
-	b[5].l = 19.0;
-	b[5].r = 22.0;
-	b[5].h = 18.0;
-
-	b[6].l = 23.0;
-	b[6].r = 29.0;
-	b[6].h = 13.0;
-	
-	b[7].l = 24.0;
-	b[7].r = 28.0;
-	b[7].h = 4.0;
-	
-	result *r = skyline(b, 0, 7, &r_size);
-	
 	int i=0;
-	//printf("\nr_size = %d\n", r_size);
+	for(;i<n;i++)
+	{
+		b[i].l = 1 + x_min + (rand())%((int)(x_max-x_min-1));
+		b[i].r = b[i].l + 1 + (rand())%((int)(x_max-b[i].l-1));
+		b[i].h = 1 + (rand())%((int)y_max);
+	} 
+
+	/*b[1].l = 1.0;
+	b[1].r = 5.0;
+	b[1].h = 11.0;
+	
+	b[0].l = 2.0;
+	b[0].r = 7.0;
+	b[0].h = 6.0;
+
+	b[3].l = 3.0;
+	b[3].r = 9.0;
+	b[3].h = 13.0;
+	
+	b[2].l = 12.0;
+	b[2].r = 16.0;
+	b[2].h = 7.0;
+
+    b[5].l = 14.0;
+	b[5].r = 25.0;
+	b[5].h = 3.0;
+	
+	b[4].l = 19.0;
+	b[4].r = 22.0;
+	b[4].h = 18.0;
+
+	b[7].l = 23.0;
+	b[7].r = 29.0;
+	b[7].h = 13.0;
+	
+	b[6].l = 24.0;
+	b[6].r = 28.0;
+	b[6].h = 4.0;*/
+	
+	i=0;
+	printf("\nThe buildings are (left x, right x, height): ");
+	for(;i<n;i++)
+	{
+		printf("(%lf, %lf, %lf) ",b[i].l, b[i].r, b[i].h);
+	}	
+	
+	result *r = skyline(b, 0, n-1, &r_size);
+	
+	i=0;
+	printf("\nThe contour is (x,y): ");
 	for(;i<r_size;i++)
 	{
-		printf("(%lf, %lf)\n",r[i].x, r[i].y);
+		printf("(%lf, %lf) ",r[i].x, r[i].y);
 	}	
+	printf("\n");
 	return 0;
 }
 
