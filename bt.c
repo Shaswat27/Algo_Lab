@@ -154,7 +154,7 @@ void max_root_to_leaf(node* root)
 	if (root == NULL) return;
 
 	node* leaf;
-	int max_sum = -10000;
+	int max_sum = -32767;
 	int *p = &max_sum;
 	int sum = 0;
 
@@ -177,9 +177,41 @@ void max_root_to_leaf(node* root)
 	printf("\n");
 }
 
+
+int find_max_path(node* n, int* sum)
+{
+	if(n==NULL) return 0;
+
+	//max paths of left and right children
+	int lc = find_max_path(n->l_child, sum);
+	int rc = find_max_path(n->r_child, sum);
+
+	//find maximum of the two
+	int m = (lc>rc)?lc:rc;
+	int m_child = (m+(n->key)>n->key)?(m+(n->key)):(n->key);
+
+	//sum when the node under consideration is the root of the maxsum path
+	int m_root = (m_child > lc+rc+n->key)?m_child:(lc+rc+n->key);
+
+    *sum = (*sum>m_root)?(*sum):m_root; 
+ 
+    return m_child;	
+
+}
+
+void max_path(node* root)
+{
+	int s = -32767;
+	int* sum = &s;
+
+	int f = find_max_path(root, sum);
+
+	printf("\nMax sum = %d\n", *sum);
+}
+
 int main()
 {
-	srand(time(NULL));
+	//srand(time(NULL));
 	int n;
 
 	printf("\nEnter the number of nodes: ");
@@ -205,6 +237,8 @@ int main()
 	postorder(t);
 
 	max_root_to_leaf(t);
+
+	max_path(t);
 
 	printf("\n");
 	return 0;	
