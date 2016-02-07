@@ -12,7 +12,7 @@ typedef struct n
 } node;
 
 int* check; //1 if used, 0 if unused
-int size;
+int size = 100;
 
 node* tree(int n, node* start)
 {
@@ -27,16 +27,39 @@ node* tree(int n, node* start)
 		return temp;
 	}
 
-	do
+	int sign = rand()%2;
+	if(sign==1)
+		temp->key = rand()%size;
+	else
+		temp->key = - (rand()%size);
+	
+	//requires mapping of -ve numbers
+	if( (temp->key) >= 0)
 	{
-		int sign = rand()%2;
-		if(sign)
-			temp->key = rand()%size;
-		else
-			temp->key = -rand()%size;
-	}while(check[temp->key]==1);
+		while(check[temp->key]==1)
+		{
+			temp->key = (temp->key+1)%size;
+		}
 
-	check[temp->key] = 1;
+		check[temp->key] = 1;
+	}
+
+	else
+	{
+		int dummy = -(temp->key);
+		dummy = dummy+(size-1);
+
+		while(check[dummy]==1)
+		{
+			dummy = (size) + (dummy+1)%size;
+		}
+
+		temp->key = -( dummy-(size-1) );
+
+		check[dummy]=1;
+
+	}	
+	
 	
 	temp->parent = start;
 
@@ -108,19 +131,22 @@ void postorder(node* p)
 
 int main()
 {
-	//srand(time(NULL));
+	srand(time(NULL));
 	int n;
 
 	printf("\nEnter the number of nodes: ");
 	scanf("%d", &n);
 
 	check = (int *)malloc((2*n-1)*sizeof(int));
-	int i = 0; 
-	for(i=0; i<n; i++)
-		check[i] = 0;
-	node* t = NULL;
-	t = tree(n, t); //create the tree
 
+	int i = 0; 
+	for(i=0; i<(2*n-1); i++)
+		check[i] = 0;
+
+	node* t = NULL;
+
+	t = tree(n, t); //create the tree
+	
 	printf("\nInorder traversal: \n");
 	inorder(t);
 
