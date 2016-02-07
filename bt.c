@@ -129,6 +129,54 @@ void postorder(node* p)
 	printf("%d ",p->key);
 }
 
+void find_leaf(node* n, node** leaf, int* max_sum, int sum)
+{
+	if(n == NULL)
+		return;
+
+	sum += n->key;
+
+	if(n->l_child == NULL && n->r_child == NULL) //if its a leaf
+	{
+		if(sum >= (*max_sum) )
+		{
+			*max_sum = sum;
+			*leaf = n;
+		}
+	}
+
+	find_leaf(n->l_child, leaf, max_sum, sum);
+	find_leaf(n->r_child, leaf, max_sum, sum);
+}
+
+void max_root_to_leaf(node* root)
+{
+	if (root == NULL) return;
+
+	node* leaf;
+	int max_sum = -10000;
+	int *p = &max_sum;
+	int sum = 0;
+
+	find_leaf(root, &leaf, p, sum);
+
+	//'leaf' has the leaf with max_sum
+	printf("\nleaf = %d, max_sum = %d\n", leaf->key, max_sum);
+
+	int count=0;
+	int* print = (int *)malloc(size*sizeof(int));
+	while(leaf!=NULL)
+	{
+		print[count++] = leaf->key;
+		leaf = leaf->parent;
+	}
+
+	int j=0;
+	for(j=count-1; j>=0; j--)
+		printf("%d ",print[j]);
+	printf("\n");
+}
+
 int main()
 {
 	srand(time(NULL));
@@ -155,6 +203,8 @@ int main()
 
 	printf("\nPostorder traversal: \n");
 	postorder(t);
+
+	max_root_to_leaf(t);
 
 	printf("\n");
 	return 0;	
