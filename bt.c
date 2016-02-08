@@ -161,7 +161,7 @@ void max_root_to_leaf(node* root)
 	find_leaf(root, &leaf, p, sum);
 
 	//'leaf' has the leaf with max_sum
-	printf("\nleaf = %d, max_sum = %d\n", leaf->key, max_sum);
+	//printf("\nleaf = %d, max_sum = %d\n", leaf->key, max_sum);
 
 	int count=0;
 	int* print = (int *)malloc(size*sizeof(int));
@@ -174,7 +174,7 @@ void max_root_to_leaf(node* root)
 	int j=0;
 	for(j=count-1; j>=0; j--)
 		printf("%d ",print[j]);
-	printf("\n");
+	//printf("\n");
 }
 
 int a[100], top=-1;
@@ -340,11 +340,11 @@ void print_path(node* path, int sum, int sum_l)
 
 	int a[100], b[100], topa = -1, topb = -1;
 
-	printf("path->key = %d\n", path->key);
+	//printf("path->key = %d\n", path->key);
 
 	_path(path->l_child, a, &topa, sum_l);
 
-	printf("left done: %d\n", topa);
+	//printf("left done: %d\n", topa);
 
 	_path(path->r_child, b, &topb, sum-sum_l-path->key);
 
@@ -361,8 +361,6 @@ void print_path(node* path, int sum, int sum_l)
 	{
 		printf("%d ", b[i]);		
 	}
-
-	printf("\n");
 }
 
 void max_path(node* root)
@@ -382,18 +380,19 @@ void max_path(node* root)
 
 	find_max_path(path->l_child, sum2, &dummy, sum_l);
 
-	printf("\nMax sum = %d\nRoot of path = %d\nLeft sum = %d\n", *sum, path->key, *sum2);
+	//printf("\nMax sum = %d\nRoot of path = %d\nLeft sum = %d\n", *sum, path->key, *sum2);
 
 	print_path(path, *sum, *sum2);
 }
 
 int main()
 {
-	//srand(time(NULL));
+	srand(time(NULL));
 	int n;
 
-	printf("\nEnter the number of nodes: ");
-	scanf("%d", &n);
+	/*printf("\nEnter the number of nodes: ");
+	scanf("%d", &n);*/
+	n = 100;
 
 	check = (int *)malloc((2*n-1)*sizeof(int));
 
@@ -403,44 +402,25 @@ int main()
 
 	node* t = NULL;
 
-	/*t = (node *)malloc(sizeof(node));
-	t->parent = NULL;
-	t->key = -1;
-	t->r_child = NULL;
-
-	t->l_child = (node *)malloc(sizeof(node));
-	t->l_child->parent = t;
-	t->l_child->key = 4;
-
-	t->l_child->l_child = (node *)malloc(sizeof(node));
-	t->l_child->l_child->parent = t->l_child;
-	t->l_child->l_child->key = 2;
-	t->l_child->l_child->l_child = NULL;
-	t->l_child->l_child->r_child = NULL;
-
-	t->l_child->r_child = (node *)malloc(sizeof(node));
-	t->l_child->r_child->parent = t->l_child;
-	t->l_child->r_child->key = 1;
-	t->l_child->r_child->l_child = NULL;
-	t->l_child->r_child->r_child = NULL;
-
-	size = 4;*/
-
 	t = tree(n, t); //create the tree
 	
-	printf("\nInorder traversal: \n");
+	//printf("\nInorder traversal: \n");
 	inorder(t);
+	printf("\n\n");
 
-	printf("\nPreorder traversal: \n");
+	//printf("\nPreorder traversal: \n");
 	preorder(t);
+	printf("\n\n");
 
-	printf("\nPostorder traversal: \n");
+	//printf("\nPostorder traversal: \n");
 	postorder(t);
+	printf("\n\n");
 
 	max_root_to_leaf(t);
+	printf("\n\n");
 
 	max_path(t);
 
-	printf("\n");
+	printf("\n\n");
 	return 0;	
 }
