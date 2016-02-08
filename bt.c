@@ -177,36 +177,120 @@ void max_root_to_leaf(node* root)
 	printf("\n");
 }
 
+int a[100], top=-1;
 
-int find_max_path(node* n, int* sum)
+int find_max_path(node* n, int* sum, node** path, int* sum_l)
 {
 	if(n==NULL) return 0;
 
+
 	//max paths of left and right children
-	int lc = find_max_path(n->l_child, sum);
-	int rc = find_max_path(n->r_child, sum);
+	int lc = find_max_path(n->l_child, sum, path, sum_l);
+	int rc = find_max_path(n->r_child, sum, path, sum_l);
 
 	//find maximum of the two
+	//printf("\n\nNode key = %d\n", n->key);
+
 	int m = (lc>rc)?lc:rc;
 	int m_child = (m+(n->key)>n->key)?(m+(n->key)):(n->key);
+
+	//printf("m_child = %d\n", m_child);
 
 	//sum when the node under consideration is the root of the maxsum path
 	int m_root = (m_child > lc+rc+n->key)?m_child:(lc+rc+n->key);
 
+	//printf("m_root = %d\n", m_child);
+
+	//printf("previous sum = %d\n", *sum);
+
+
+	if(*sum<=m_root) 
+	{
+		*path = n;
+		*sum_l = *sum;
+	}
+
     *sum = (*sum>m_root)?(*sum):m_root; 
+
+
+
+    //printf("sum = %d\n", *sum);
  
     return m_child;	
 
 }
 
+int _path(node* path, int a[], int top, int sum)
+{
+	a[++top] = path->key;
+
+	printf("a[top] = %d & top = %d\n", a[top], top);
+
+	int count = 0, i;
+	for(i=top; i>=0; i--)
+	{
+		count += a[i];
+		if(count == sum)
+		{
+			int j;
+			for(j=0; j<=top; j++)
+				printf("%d ", a[j]);
+			printf("\n");
+			break;
+		}
+	}
+
+	if(path->l_child==NULL && path->r_child==NULL && count!=sum)
+	{
+		printf("Decrease top to %d\n", top-1);
+		top--;
+	}
+
+	if(path->l_child != NULL)
+		top = _path(path->l_child, a, top, sum);
+	if(path->r_child != NULL)
+		top = _path(path->r_child, a, top, sum);	
+
+	return top;
+}
+
+void print_path(node* path, int sum, int sum_l)
+{
+	if(path == NULL) return;
+
+	int a[100], top = -1;
+
+	printf("path->key = %d\n", path->key);
+
+	top = _path(path, a, top, sum);
+
+	int i = 0, temp = 0;
+
+	for(i=1;i<=top;i++)
+	{
+		temp += a[i];
+		printf("%d ", a[i]);
+		if(temp == sum_l)
+			printf("%d ", a[0]);
+	}
+
+	printf("\n");
+}
+
 void max_path(node* root)
 {
 	int s = -32767;
+	int s_l = -32767;
 	int* sum = &s;
+	int* sum_l = &s_l;
 
-	int f = find_max_path(root, sum);
+	node* path;
 
-	printf("\nMax sum = %d\n", *sum);
+	int f = find_max_path(root, sum, &path, sum_l);
+
+	printf("\nMax sum = %d\nRoot of path = %d\nLeft sum = %d\n", *sum, path->key, *sum_l);
+
+	print_path(path, *sum, *sum_l);
 }
 
 int main()
