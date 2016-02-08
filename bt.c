@@ -220,58 +220,146 @@ int find_max_path(node* n, int* sum, node** path, int* sum_l)
 
 }
 
-int _path(node* path, int a[], int top, int sum)
+int _path(node* path, int a[], int* top, int sum)
 {
-	a[++top] = path->key;
+	if(path == NULL) 
+	{
+		return 0;
+		*top = -1;
+	}
 
-	printf("a[top] = %d & top = %d\n", a[top], top);
+	a[++(*top)] = path->key;
+
+	//printf("a[top] = %d & top = %d\n", a[*top], *top);
 
 	int count = 0, i;
-	for(i=top; i>=0; i--)
+	for(i=*top; i>=0; i--)
 	{
 		count += a[i];
 		if(count == sum)
 		{
-			int j;
+			/*int j;
 			for(j=0; j<=top; j++)
 				printf("%d ", a[j]);
-			printf("\n");
-			break;
+			printf("\n");*/
+			return count;
 		}
 	}
 
-	if(path->l_child==NULL && path->r_child==NULL && count!=sum)
+	/*if(path->l_child==NULL && path->r_child==NULL && count!=sum)
 	{
 		printf("Decrease top to %d\n", top-1);
 		top--;
-	}
+	}*/
 
+	int top_prev = *top, left = 0, right = 0, j;
+
+	int b[100], c[100];
+	*top=-1;
 	if(path->l_child != NULL)
-		top = _path(path->l_child, a, top, sum);
+		left = _path(path->l_child, b, top, sum);
+	else
+		left = -32767;
+	int top1 = *top;
+	*top=-1;
 	if(path->r_child != NULL)
-		top = _path(path->r_child, a, top, sum);	
+		right = _path(path->r_child, c, top, sum);
+	else
+		right = -32767;
+	int top2 = *top;	
+	
+	int count2 = path->key;
+	left += path->key;
+	right += path->key;
 
-	return top;
+	//printf("Checks - %d %d %d\n",left, right, count2);
+	//printf("Tops - %d %d %d\n", top1, top2, top_prev);
+
+	if(left>right)
+	{
+		/*if(count2<=right)
+			{*top=top1; return left;}
+		else if(count2>=right && count2<=left )
+			{*top=top1; return left;}
+		else if(count2>left)
+			{*top=top_prev; return count;}*/
+		if(count2>left)
+		{
+			*top = top_prev;
+			return count;
+		}
+		else
+		{
+			int i = 0;
+
+			/*for(i=0;i<=top1; i++)
+				printf("%d ", b[i]);
+
+			printf("\n");*/
+
+			for(i=top_prev+1;i<=top_prev+top1+1;i++)
+				a[i]=b[i-top_prev-1];
+			*top = top1+top_prev+1;
+			return left;		
+		}
+	}
+	else
+	{
+		/*a[top1] = a[top2];
+		if(count2<=left)
+			{*top=top1+1; return right;}
+		else if(count2>=left && count2<=right )
+			{*top=top1+1; return right;}
+		else if(count2>right)
+			{*top=top_prev; return count;}*/
+		if(count2>right)
+		{
+			*top = top_prev;
+			return count;
+		}
+		else
+		{
+			int i = 0;
+
+			/*for(i=0;i<=top2; i++)
+				printf("%d ", c[i]);
+
+			printf("\n");*/
+
+			for(i=top_prev+1;i<=top2+top_prev+1;i++)
+				a[i]=c[i-top_prev-1];
+			*top = top2+top_prev+1;
+			return right;
+		}
+	}	
 }
 
 void print_path(node* path, int sum, int sum_l)
 {
 	if(path == NULL) return;
 
-	int a[100], top = -1;
+	int a[100], b[100], topa = -1, topb = -1;
 
 	printf("path->key = %d\n", path->key);
 
-	top = _path(path, a, top, sum);
+	_path(path->l_child, a, &topa, sum_l);
+
+	printf("left done: %d\n", topa);
+
+	_path(path->r_child, b, &topb, sum-sum_l-path->key);
 
 	int i = 0, temp = 0;
 
-	for(i=1;i<=top;i++)
+	for(i=topa;i>=0;i--)
 	{
-		temp += a[i];
 		printf("%d ", a[i]);
-		if(temp == sum_l)
-			printf("%d ", a[0]);
+	}
+
+	printf("%d ", path->key);
+
+	for(i=0;i<=topb;i++)
+	{
+		printf("%d ", b[i]);		
 	}
 
 	printf("\n");
@@ -288,9 +376,15 @@ void max_path(node* root)
 
 	int f = find_max_path(root, sum, &path, sum_l);
 
-	printf("\nMax sum = %d\nRoot of path = %d\nLeft sum = %d\n", *sum, path->key, *sum_l);
+	int s2 = -32767;
+	int *sum2 = &s2;
+	node* dummy;
 
-	print_path(path, *sum, *sum_l);
+	find_max_path(path->l_child, sum2, &dummy, sum_l);
+
+	printf("\nMax sum = %d\nRoot of path = %d\nLeft sum = %d\n", *sum, path->key, *sum2);
+
+	print_path(path, *sum, *sum2);
 }
 
 int main()
@@ -308,6 +402,29 @@ int main()
 		check[i] = 0;
 
 	node* t = NULL;
+
+	/*t = (node *)malloc(sizeof(node));
+	t->parent = NULL;
+	t->key = -1;
+	t->r_child = NULL;
+
+	t->l_child = (node *)malloc(sizeof(node));
+	t->l_child->parent = t;
+	t->l_child->key = 4;
+
+	t->l_child->l_child = (node *)malloc(sizeof(node));
+	t->l_child->l_child->parent = t->l_child;
+	t->l_child->l_child->key = 2;
+	t->l_child->l_child->l_child = NULL;
+	t->l_child->l_child->r_child = NULL;
+
+	t->l_child->r_child = (node *)malloc(sizeof(node));
+	t->l_child->r_child->parent = t->l_child;
+	t->l_child->r_child->key = 1;
+	t->l_child->r_child->l_child = NULL;
+	t->l_child->r_child->r_child = NULL;
+
+	size = 4;*/
 
 	t = tree(n, t); //create the tree
 	
