@@ -28,9 +28,13 @@ node* CREATE_INTERVAL_TREE(int l, int u, int n)
 	}	
 
 	int size = (u-l+1)/n;
-	
-	int median = l + size*( (n-1)/2 );
-	
+
+	int median;
+	if(n%2==1)	
+		median = l + size*( (n-1)/2 );
+	else
+		median = l + size*( (n)/2 );
+
 	node* root = (node *)malloc(sizeof(node));
 	root->a = median;
 	root->b = median + (size-1);
@@ -39,11 +43,17 @@ node* CREATE_INTERVAL_TREE(int l, int u, int n)
 	root->right = NULL;
 	
 	if(n%2 == 1)
+	{
 		root->left = CREATE_INTERVAL_TREE(l, median-1, n/2);
+		root->right = CREATE_INTERVAL_TREE((root->b+1), u, n/2);
+	}
 	else
-		root->left = CREATE_INTERVAL_TREE(l, median-1, n/2-1);
+	{
+		root->left = CREATE_INTERVAL_TREE(l, median-1, n/2);
+		root->right = CREATE_INTERVAL_TREE((root->b+1), u, n/2-1);
+	}	
 
-	root->right = CREATE_INTERVAL_TREE((root->b+1), u, n/2);
+	
 		
 	return root;	
 }
