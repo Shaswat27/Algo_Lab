@@ -66,24 +66,24 @@ void INSERT(node* T, int i)
 			insert->k = i;
 			insert->next = NULL;	
 			
-			list* p = T->x;
+			list* p = (T->x);
 			
-			if(p->k>i) ///first element is greater
+			if((p)->k>i) ///first element is greater
 			{
 				insert->next = p;	
 				T->x = insert;
 				return;
 			}
 			
-			while( p->next != NULL ) 
+			while( (p)->next != NULL ) 
 			{
-					if(p->next->k > i)
+					if((p)->next->k > i)
 						break;				
-					p=p->next;
+					(p)=(p)->next;
 			}
 			//p now points to the place of insertion
-			p->next = insert;	
-			insert->next = p->next;
+			insert->next = (p)->next;
+			(p)->next = insert;			
 		}
 		return;
 	}	
@@ -228,17 +228,59 @@ void MERGE(node* T, int l, int u)
 			}
 			MERGE(T->left, l, u);
 		}
-
 		//case 4??
-	}
-	
+	}	
 		
-}			
+}	
+
+node** first;
+void PRETTY_PRINT(node* Tree)
+{
+	static int h = 0;
+	static int rt = 0;
+
+	if(Tree == NULL) {return;}
+
+	if(!rt)
+	{
+		first = &Tree;
+		rt = 1;
+	}
+
+
+	PRETTY_PRINT(Tree->left);
+
+	int i=0;
+	for(;i<h;i++)
+		printf("\t");
+	printf("[%d,%d] ", Tree->a, Tree->b);
+	list* p = Tree->x;
+	while(p != NULL)
+	{
+		if(p->next == NULL)
+			printf("%d", p->k);
+		else
+			printf("%d, ", p->k);
+		p = p->next;
+	}
+	printf("\n");
+	h++;
+	if(Tree == *first) h=0;
+
+	PRETTY_PRINT(Tree->right);		
+}		
 					
 
 int main()
 {
 	node* root;
-	root = CREATE_INTERVAL_TREE(1,29,5);
+	root = CREATE_INTERVAL_TREE(1,25,5);
+	INSERT(root, 2);
+	INSERT(root, 1);
+	INSERT(root, 3);
+	INSERT(root, 13);
+	INSERT(root, 20);
+	INSERT(root, 17);
+	PRETTY_PRINT(root);
 	return 0;
 }
