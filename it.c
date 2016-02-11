@@ -246,7 +246,7 @@ void MERGE(node* T, int l, int u)
 node** first;
 void PRETTY_PRINT(node* Tree)
 {
-	static int h = 0;
+	static int h = -1;
 	static int rt = 0;
 
 	if(Tree == NULL) {return;}
@@ -254,12 +254,20 @@ void PRETTY_PRINT(node* Tree)
 	if(!rt)
 	{
 		first = &Tree;
+		node* p = Tree;
+		while(p!=NULL)
+		{
+			h++;
+			p=p->left;
+    	}
 		rt = 1;
 	}
 
-
-	PRETTY_PRINT(Tree->left);
-
+	if(Tree->left!=NULL)
+	{
+		h=h-1;
+		PRETTY_PRINT(Tree->left);
+	}
 	int i=0;
 	for(;i<h;i++)
 		printf("\t");
@@ -274,17 +282,21 @@ void PRETTY_PRINT(node* Tree)
 		p = p->next;
 	}
 	printf("\n");
-	h++;
-	if(Tree == *first) h=0;
 
-	PRETTY_PRINT(Tree->right);		
+	if(Tree->right!=NULL)
+	{
+		h=h-1;
+		PRETTY_PRINT(Tree->right);	
+	}
+	h=h+1;
 }		
+
 					
 
 int main()
 {
 	node* root;
-	root = CREATE_INTERVAL_TREE(1,25,5);
+	root = CREATE_INTERVAL_TREE(1,55,11);
 	INSERT(root, 2);
 	INSERT(root, 1);
 	INSERT(root, 3);
@@ -292,5 +304,6 @@ int main()
 	INSERT(root, 20);
 	INSERT(root, 17);
 	PRETTY_PRINT(root);
+	//printf("%d %d\n",root->right->left->a, root->right->right->a);
 	return 0;
 }
