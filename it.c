@@ -145,6 +145,28 @@ void list_delete(list** head, list* n)
     // Free memory
     free(n);
     return; 
+}
+
+void updateLL(node** root, node** start)
+{
+	if(*start == NULL) return;
+
+	printf("Start - %d\n", (*start)->a);
+
+	updateLL(root, &((*start)->left));
+
+	list* p;
+	p = (*start)->x;
+	int i = 0;
+	while(p!=NULL)
+	{
+		printf("Put - %d\n", p->k);
+		INSERT(*root, p->k);
+		p = p->next;
+		i++;
+	}
+
+	updateLL(root, &((*start)->right));
 }	
 
 
@@ -164,12 +186,20 @@ void MERGE(node* T, int l, int u)
 
 	if( (T->a)>u ) //no intersection 
 	{
-		if(flag)
+		MERGE(T->left, l, u);
+
+		if(flag && T!=*tree)
 		{
+			if(T->b > max_u) max_u = T->b;
+			if(T->a < min_l) min_l = T->a;
+
 			if(T->a>=(*upper)->a)
 			{
 				printf("T->a>=(*upper)->a\n");
-				(*upper)->right = T;
+				(*upper)->right = T->right;
+
+				updateLL(upper, &(T->left));
+
 			}
 			else
 			{
@@ -177,17 +207,24 @@ void MERGE(node* T, int l, int u)
 				(*upper)->left = T;
 			}	
 		}
-		MERGE(T->left, l, u);
 	}
 
 	if( (T->b)<l ) //no intersection
 	{
-		if(flag)
+		MERGE(T->right, l, u);
+
+		if(flag && T!=*tree)
 		{
+			
+			if(T->b > max_u) max_u = T->b;
+		if(T->a < min_l) min_l = T->a;
+
 			if(T->a>=(*lower)->a)
 			{
 				printf("T->a>=(*lower)->a\n");
-				(*lower)->right = T;
+				(*lower)->left = T->left;
+
+				updateLL(lower, &(T->right));
 			}
 			else
 			{
@@ -195,7 +232,6 @@ void MERGE(node* T, int l, int u)
 				(*lower)->left = T;
 			}
 		}
-		MERGE(T->right, l, u);
 	}
 
 	//if we find an intersection
@@ -207,7 +243,7 @@ void MERGE(node* T, int l, int u)
 			sub_root = &T; 
 			(*sub_root)->a = l;
 			(*sub_root)->b = u;
-			printf("Sub_root -> %d\n", (*sub_root)->x->k);
+			//printf("Sub_root -> %d\n", (*sub_root)->x->k);
 			flag = 1;
 		}
 
@@ -273,6 +309,7 @@ void MERGE(node* T, int l, int u)
 			}
 			printf("Case 2 finished, move to next node\n");
 			//if(T->right != NULL)
+				MERGE(T->left, l, u);
 				MERGE(T->right, l, u);
 			//else return;
 		}
@@ -316,15 +353,75 @@ void MERGE(node* T, int l, int u)
 			}
 			MERGE(T->left, l, u);
 		}
-		//case 4 - add case 4
-		//detect
+		
+		//case 4 - [l,u] is completely inside T: [T->a, T->b]
+		if( l>(T->a) && (T->b)>u)
+		{
+			printf("Case4\n");
+			if(T->b > max_u) max_u = T->b;
+			if(T->a < min_l) min_l = T->a;
+			if(*sub_root!=T) //if we are not at the subroot, insert all elemnts to 
+			{
+				list** head = &(T->x);
+				list** p = &(T->x);
+				if((*p)->k<=u && (*p)->k>=l)
+					{
+						printf("Insert %d\n", (*p)->k);
+						INSERT(*sub_root, (*p)->k);
+						printf("Inserted: ");
+						list* q = (*sub_root)->x;
+						while(q!=NULL)
+						{
+							printf(" %d", q->k);
+							q = q->next;
+						}
+						printf("\n");
+						list_delete(head, *p);
+						//printf("p = %d\n", (*p)->k);
+						//if((*p)->next == NULL) (*head) = (*p);
+					}
+					if((*p)!=NULL)
+					{
+						if((*p)->k>u)
+						{
+							printf("Insert to upper %d\n", (*p)->k);
+							INSERT(*upper, (*p)->k);
+							*p = (*p)->next;
+						}
+						if((*p)->k<l)
+						{
+							printf("Insert to lower %d\n", (*p)->k);
+							INSERT(*lower, (*p)->k);
+							*p = (*p)->next;
+						}
+					}
+			}
+			//if(T->left != NULL)
+				MERGE(T->left, l, u);
+			//if(T->right != NULL)
+				MERGE(T->right, l, u);
+		}
+
+
 	}	
 	printf("Main loop ends with T = [%d, %d]\n", T->a, T->b);
 
 	if(T == *tree)
 	{
-		(*sub_root)->left = *lower;
-		(*sub_root)->right = *upper;
+		if(min_l!= 32768)
+		{
+			(*lower)->a = min_l;
+			(*lower)->b = l-1;
+			(*sub_root)->left = *lower;
+		}
+		if(max_u != -32766)
+		{
+			(*upper)->a = u+1;
+			(*upper)->b = max_u;
+			(*sub_root)->right = *upper;
+		}
+		//(*sub_root)->left = *lower;
+		//(*sub_root)->right = *upper;
 	}
 		
 }	
@@ -410,7 +507,7 @@ int main()
 
 	tree = &root;
 
-	MERGE(root, 3, 17);
+	MERGE(root, 27, 32);
 
 	list* p;
 	printf("\nLower ->");
