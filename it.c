@@ -198,13 +198,17 @@ void MERGE(node* T, int l, int u)
 				printf("T->a>=(*upper)->a\n");
 				(*upper)->right = T->right;
 
+
+				
 				updateLL(upper, &(T->left));
+
+				//(*upper)->x = T->x;
 
 			}
 			else
 			{
 				printf("T->a<(*upper)->a\n");
-				(*upper)->left = T;
+				(*upper)->right = T;
 			}	
 		}
 	}
@@ -223,8 +227,11 @@ void MERGE(node* T, int l, int u)
 			{
 				printf("T->a>=(*lower)->a\n");
 				(*lower)->left = T->left;
-
+				(*lower)->x = T->x;
+				
 				updateLL(lower, &(T->right));
+
+				//
 			}
 			else
 			{
