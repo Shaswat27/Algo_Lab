@@ -42,6 +42,20 @@ process* uncle(process* n)
 		return NULL;
 }
 
+//sibling
+process* sibling(process* n)
+{
+	if(n->parent == NULL)
+		return NULL;
+	else
+	{
+		if(n->parent->left == n)
+			return n->parent->right;
+		else
+			return n->parent->left;
+	}
+}
+
 //function for rotation
 //right rotate
 void right_rotate(process** root, process* n)
@@ -136,6 +150,234 @@ void insert(process** root, process* node)
 	insert1(root, node);
 }
 
+//functions for deletion
+process* minValueNode(process* n)
+{
+	printf("BLAH2\n");
+
+	process* current = n;
+ 
+	while (current->left != NULL)
+        current = current->left;
+ 
+    return current;
+}
+
+
+process* bst_delete(process* root, int executionTime, process** v)
+{
+	if (root == NULL) return root;
+ 
+    if (executionTime < root->executionTime)
+        root->left = bst_delete(root->left, executionTime, v);
+ 
+    else if (executionTime > root->executionTime)
+        root->right = bst_delete(root->right, executionTime, v);
+ 
+    else
+    {
+        if (root->left == NULL)
+        {
+            process *temp = root->right;
+            temp->parent = root->parent;//free(root);
+            *v = temp;
+            return temp;
+        }
+        else if (root->right == NULL)
+        {
+            process *temp = root->left;
+            temp->parent = root->parent;//free(root);
+            *v = temp;
+            return temp;
+        }
+ 
+        process* temp = minValueNode(root->right);
+ 
+        // Copy the inorder successor's content to this node
+        root->executionTime = temp->executionTime;
+        root->processId = temp->processId;
+        root->color = temp->color;
+        root->priority = temp->priority;
+        *v = temp;
+
+        root->right = bst_delete(root->right, temp->executionTime, v);
+    }
+    return root;
+}
+
+process* successor(process* n)
+{
+	if(n->right != NULL)
+	{
+		process* temp = n->right;
+
+		while(temp->right != NULL)
+			temp = temp->right;
+		return temp;
+	}
+
+	process* y = n->parent;
+
+	while(y!=NULL && n == y->right)
+	{
+		n = y;
+		y = y->parent;
+	}
+
+	return y;
+}
+
+void fix_delete(process** root, process* node, process* nodeParent, int nodeIsLeft) 
+{
+    while (node != (*root) && node->color == 0) 
+    {
+        process* w;
+        if (nodeIsLeft) 
+        {
+            w = nodeParent->right;
+            if (w->color == 1) 
+            {
+                w->color = 0;
+                nodeParent->color = 1;
+                left_rotate(root, nodeParent);
+                w = nodeParent->right;
+            }
+
+            if (w->left->color==0 && w->right->color==0) 
+            {
+                w->color = 1;
+                node = nodeParent;
+                nodeParent = node->parent;
+                nodeIsLeft = (node == nodeParent->left)?1:0;
+            } 
+            else 
+            {
+                if (w->right->color == 0) 
+                {
+                    w->left->color = 0;
+                    w->color = 1;
+                    right_rotate(root, w);
+                    w = nodeParent->right;
+                }
+
+                w->color = nodeParent->color;
+                nodeParent->color = 0;
+                if (w->right != NULL) 
+                {
+                    w->right->color = 0;
+                }
+                left_rotate(root, nodeParent);
+                node = *root;
+                nodeParent = NULL;
+            }
+        } 
+        else 
+        {   
+            // nodeIsLeft == 0 
+            w = nodeParent->left;
+            if (w->color == 1) 
+            {
+                w->color = 0;
+                nodeParent->color = 1;
+                right_rotate(root, nodeParent);
+                w = nodeParent->left;
+            }
+
+            if (w->right->color==0 && w->left->color==0) 
+            {
+                w->color = 1;
+                node = nodeParent;
+                nodeParent = node->parent;
+                nodeIsLeft = (node == nodeParent->left)?1:0;
+            } 
+            else 
+            {
+                if (w->left->color == 0) 
+                {
+                    w->right->color = 0;
+                    w->color = 1;
+                    left_rotate(root, w);
+                    w = nodeParent->left;
+                }
+
+                w->color = nodeParent->color;
+                nodeParent->color = 0;
+                
+                if (w->left != NULL) 
+                {
+                    w->left->color = 1;
+                }
+                
+                right_rotate(root, nodeParent);
+                node = *root;
+                nodeParent = NULL;
+            }
+        }
+    }
+
+    node->color = 0;
+}
+
+process* delete(process** root, process* node) 
+{
+    process* y;
+    if (node->left == NULL || node->right == NULL) 
+    {
+        y = node;
+    } 
+    else 
+    {
+        y = successor(node);
+    }
+
+    process* x;
+    if (y->left != NULL) 
+    {
+        x = y->left;
+    } 
+    else 
+    {
+        x = y->right;
+    }
+    if (x != NULL) 
+    {
+        x->parent = y->parent;
+    }
+
+    process* xParent = y->parent;
+
+    int yIsLeft = 0;
+    if (y->parent == NULL) 
+    {
+        *root = x;
+    } 
+    else if (y == y->parent->left) 
+    {
+        y->parent->left = x;
+        yIsLeft = 1;
+    } 
+    else 
+    {
+        y->parent->right = x;
+        yIsLeft = 0;
+    }
+
+    if (y != node) 
+    {
+        node->executionTime = y->executionTime;
+        node->processId = y->processId;
+        node->priority = y->priority;
+        node->color = y->color;
+    }
+
+    if (y->color == 0) 
+    {
+        fix_delete(root, x, xParent, yIsLeft);
+    }
+
+    return y;
+}
+
 void main()
 {
 	process* n1 = (process *)malloc(sizeof(process));
@@ -184,8 +426,12 @@ void main()
 
 	insert(&processTree, n4);
 
-	printf("%d %d %d %d\n", processTree->executionTime, processTree->left->executionTime, processTree->right->executionTime, processTree->left->left->color);
+	printf("%d %d %d %d\n", processTree->executionTime, processTree->left->executionTime, processTree->right->executionTime, processTree->left->left->executionTime);
+
 	
+	delete(&processTree, n3);
+
+	printf("%d %d %d\n", processTree->color, processTree->left->color, processTree->right->color);		
 }
 
 void insert5(process** root, process* n)
