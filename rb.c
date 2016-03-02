@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 typedef struct n
 {
@@ -14,9 +15,6 @@ typedef struct n
 	struct n* left;
 	struct n* right;
 } process;
-
-int N = 10, x = 0, M = 10; //max number of live processes, current number of processes, number of processes to be completed
-int t = 50; //time for each scheduling = priority*t;
 
 //grandparent
 process* grandparent(process* n)
@@ -40,20 +38,6 @@ process* uncle(process* n)
 	}
 	else
 		return NULL;
-}
-
-//sibling
-process* sibling(process* n)
-{
-	if(n->parent == NULL)
-		return NULL;
-	else
-	{
-		if(n->parent->left == n)
-			return n->parent->right;
-		else
-			return n->parent->left;
-	}
 }
 
 //function for rotation
@@ -151,60 +135,6 @@ void insert(process** root, process* node)
 }
 
 //functions for deletion
-process* minValueNode(process* n)
-{
-	printf("BLAH2\n");
-
-	process* current = n;
- 
-	while (current->left != NULL)
-        current = current->left;
- 
-    return current;
-}
-
-
-process* bst_delete(process* root, int executionTime, process** v)
-{
-	if (root == NULL) return root;
- 
-    if (executionTime < root->executionTime)
-        root->left = bst_delete(root->left, executionTime, v);
- 
-    else if (executionTime > root->executionTime)
-        root->right = bst_delete(root->right, executionTime, v);
- 
-    else
-    {
-        if (root->left == NULL)
-        {
-            process *temp = root->right;
-            temp->parent = root->parent;//free(root);
-            *v = temp;
-            return temp;
-        }
-        else if (root->right == NULL)
-        {
-            process *temp = root->left;
-            temp->parent = root->parent;//free(root);
-            *v = temp;
-            return temp;
-        }
- 
-        process* temp = minValueNode(root->right);
- 
-        // Copy the inorder successor's content to this node
-        root->executionTime = temp->executionTime;
-        root->processId = temp->processId;
-        root->color = temp->color;
-        root->priority = temp->priority;
-        *v = temp;
-
-        root->right = bst_delete(root->right, temp->executionTime, v);
-    }
-    return root;
-}
-
 process* successor(process* n)
 {
 	if(n->right != NULL)
@@ -227,32 +157,57 @@ process* successor(process* n)
 	return y;
 }
 
+int is_black(process* node)
+{
+	//printf("Clause\n");
+	if(node!=NULL)
+	{
+		if(node->color==0)
+			return 1;
+		else
+			return 0;
+	}
+	else
+		return 1;
+}
+
 void fix_delete(process** root, process* node, process* nodeParent, int nodeIsLeft) 
 {
-    while (node != (*root) && node->color == 0) 
+    //printf("node: %d\n", (*root)->executionTime);
+    while (node != (*root) && is_black(node)) 
     {
         process* w;
+
         if (nodeIsLeft) 
         {
-            w = nodeParent->right;
-            if (w->color == 1) 
+        	w = nodeParent->right;
+
+        	//printf("Clause\n");
+
+            if (is_black(w) != 1) 
             {
-                w->color = 0;
+            	w->color = 0;
                 nodeParent->color = 1;
                 left_rotate(root, nodeParent);
+
                 w = nodeParent->right;
             }
 
-            if (w->left->color==0 && w->right->color==0) 
+            if (is_black(w->left)==1 && is_black(w->right)==1) 
             {
                 w->color = 1;
                 node = nodeParent;
                 nodeParent = node->parent;
-                nodeIsLeft = (node == nodeParent->left)?1:0;
+                //printf("Clause2\n");
+                if(nodeParent!=NULL)
+                	nodeIsLeft = (node == nodeParent->left)?1:0;
+                else
+                	nodeIsLeft = 0;
             } 
             else 
             {
-                if (w->right->color == 0) 
+                
+                if (is_black(w->right) == 1) 
                 {
                     w->left->color = 0;
                     w->color = 1;
@@ -273,9 +228,9 @@ void fix_delete(process** root, process* node, process* nodeParent, int nodeIsLe
         } 
         else 
         {   
-            // nodeIsLeft == 0 
             w = nodeParent->left;
-            if (w->color == 1) 
+
+            if (is_black(w) != 1) 
             {
                 w->color = 0;
                 nodeParent->color = 1;
@@ -283,16 +238,19 @@ void fix_delete(process** root, process* node, process* nodeParent, int nodeIsLe
                 w = nodeParent->left;
             }
 
-            if (w->right->color==0 && w->left->color==0) 
+            if (is_black(w->left)==1 && is_black(w->right)==1) 
             {
                 w->color = 1;
                 node = nodeParent;
                 nodeParent = node->parent;
-                nodeIsLeft = (node == nodeParent->left)?1:0;
+                if(nodeParent!=NULL)
+                    nodeIsLeft = (node == nodeParent->left)?1:0;
+                else
+                    nodeIsLeft = 0;
             } 
             else 
             {
-                if (w->left->color == 0) 
+                if (is_black(w->left) == 1) 
                 {
                     w->right->color = 0;
                     w->color = 1;
@@ -301,13 +259,11 @@ void fix_delete(process** root, process* node, process* nodeParent, int nodeIsLe
                 }
 
                 w->color = nodeParent->color;
-                nodeParent->color = 0;
-                
+                nodeParent->color = 0;                
                 if (w->left != NULL) 
                 {
                     w->left->color = 1;
-                }
-                
+                }                
                 right_rotate(root, nodeParent);
                 node = *root;
                 nodeParent = NULL;
@@ -315,11 +271,14 @@ void fix_delete(process** root, process* node, process* nodeParent, int nodeIsLe
         }
     }
 
+    //printf("\n\nChange Node Color: %d\n\n", node->executionTime);
+
     node->color = 0;
 }
 
 process* delete(process** root, process* node) 
 {
+    printf("Node to be deleted: %d\n", node->executionTime);
     process* y;
     if (node->left == NULL || node->right == NULL) 
     {
@@ -370,17 +329,125 @@ process* delete(process** root, process* node)
         node->color = y->color;
     }
 
-    if (y->color == 0) 
+    if (y->color == 0 && (*root)!=NULL) 
     {
+        //if(xParent==NULL)
+        	//printf("---\n");
+        //if(xParent != NULL)
+        //printf("before fix_delete\n");
         fix_delete(root, x, xParent, yIsLeft);
+        //printf("after fix_delete\n");
     }
 
     return y;
 }
 
+//function to find minimum
+process* min(process* root)
+{
+	process* curr = root;
+	while(curr->left != NULL)
+		curr=curr->left;
+	//printf("min = %d\n", curr->executionTime);
+	return curr;
+}
+
+//create process
+process* create_process(int c)
+{
+	process* temp = (process *)malloc(sizeof(process));
+
+	temp->executionTime = 1 + (rand())%1000;
+	temp->color = 1;
+	temp->priority = 1 + (rand())%4;
+	temp->processId = c;
+
+	temp->parent = NULL;
+	temp->left =  NULL;
+	temp->right = NULL;
+
+	return temp;
+}
+
+//THE LOOP!
+void scheduler(int N, int x, int M, int t, int c, process** root)
+{
+	printf("x = %d, c = %d\n", x, c);
+
+	if(x<N && c<M) //if number of live processes<=current number of live processes and c<total number of processes created
+	{
+		process* new_process = create_process(c++);
+
+		if( (*root) == NULL )
+		{
+			printf("first node: %d\n", new_process->executionTime);
+			new_process->color = 0;
+			*root = new_process;
+			x++;
+		}	
+		else
+		{
+			printf("node insert: %d\n", new_process->executionTime);
+			insert(root, new_process);
+
+			//if(c==3)
+        	//	printf("root = %d, root->left = %d, root->right = %d\n", (*root)->color, (*root)->left->color,(*root)->right->color);
+
+			x++;
+		}	
+		//if(c==5)
+		//printf("\nRoot: %d, %d, %d, %d\n\n", (*root)->color, (*root)->left->color, (*root)->right->color, (*root)->left->right->color);
+	}
+
+	if(x>0)
+	{
+		
+		process* execute = min(*root);
+		
+		//printf("before delete\n");
+
+		/*if(c==1)
+			printf("root = %d, color = %d\n", (*root)->executionTime, (*root)->color);
+
+		if(c==2)
+			printf("root = %d, color = %d\n, root->right = %d\n, color = %d", (*root)->executionTime, (*root)->color, (*root)->right->executionTime, (*root)->right->color);
+		*/
+		//if(*root != NULL && (*root)->left!=NULL && (*root)->right!=NULL)
+		//printf("\n\nroot = %d, root->left = %d, root->right = %d\n", (*root)->executionTime, (*root)->left->executionTime,(*root)->right->executionTime);
+
+		execute = delete(root, execute);
+
+		//printf("after delete\n");
+
+		execute->executionTime -= t*(execute->priority);
+
+		if(execute->executionTime > 0) //still has to be inserted
+		{
+			execute->color = 1; //color should be red for any insertion process
+			insert(root, execute);
+		}	
+		else
+			x--;
+
+		scheduler(N, x, M, t, c, root);
+	}
+
+}
+
+
 void main()
 {
-	process* n1 = (process *)malloc(sizeof(process));
+	int N = 10, x = 0, M = 10; //max number of live processes, current number of processes, number of processes to be completed
+	int t = 50; //time for each scheduling = priority*t;
+	int c = 0; //total number of processes created
+
+	//srand(time(NULL));
+
+	process* processTree = NULL;
+
+	scheduler(N, x, M, t, c, &processTree);
+
+	/*process* n1 = (process *)malloc(sizeof(process));
 	n1->processId = 1;
 	n1->executionTime = 10;
 	n1->color = 0;
@@ -432,6 +499,10 @@ void main()
 	delete(&processTree, n3);
 
 	printf("%d %d %d\n", processTree->color, processTree->left->color, processTree->right->color);		
+
+	process* search = lookup(processTree, 9);
+
+	printf("%d\n", search->executionTime);*/
 }
 
 void insert5(process** root, process* n)
