@@ -14,6 +14,9 @@ typedef struct n
 	//child pointers
 	struct n* left;
 	struct n* right;
+
+	//linked list structure for same value
+	struct n* next;
 } process;
 
 //grandparent
@@ -80,6 +83,48 @@ void left_rotate(process** root, process* n)
 	n->parent = y;
 }
 
+//linked list insertion
+void list_insert(process** root, process* n)
+{
+	process* current;
+
+    //head insertion
+    if ((*root)->next==NULL)
+    {
+        if((*root)->priority <= n->priority)
+        {
+        	n->next = (*root)->next;
+        	(*root)->next = n;
+        }
+        else
+        {
+        	n->next = (*root)->next;
+        	(*root)->next = n;
+        	
+        	//now swap data
+        	int temp = 0;
+        	
+        	temp = n->processId;
+        	n->processId = (*root)->processId;
+        	(*root)->processId = temp;
+
+        	temp = n->priority;
+        	n->priority = (*root)->priority;
+        	(*root)->priority = temp;
+        }
+    }
+    else
+    {
+        current = (*root);
+        while (current->next !=NULL && current->next->priority < n->priority)
+        {
+            current = current->next;
+        }
+        n->next = current->next;
+        current->next = n;
+    }
+}
+
 //functions for insertion
 void bst_insert(process** root, process* n)
 {
@@ -104,7 +149,7 @@ void bst_insert(process** root, process* n)
 				n->right = NULL;
 			}
 		}
-		else
+		else if(n->executionTime > (*root)->executionTime)
 		{
 			if((*root)->right != NULL)
 				bst_insert(&((*root)->right), n);
@@ -115,6 +160,10 @@ void bst_insert(process** root, process* n)
 				n->left = NULL;
 				n->right = NULL;
 			}
+		}
+		else //if the execution times are equal
+		{
+			list_insert(root, n);
 		}
 	}	
 }
@@ -366,6 +415,7 @@ process* create_process(int c)
 	temp->parent = NULL;
 	temp->left =  NULL;
 	temp->right = NULL;
+	temp->next = NULL;
 
 	return temp;
 }
@@ -400,19 +450,42 @@ void scheduler(int N, int x, int M, int t, int c, process** root)
 		
 		process* execute = min(*root);
 
-		execute = delete(root, execute);
-
-		execute->executionTime -= t*(execute->priority);
-
-		if(execute->executionTime > 0) //still has to be inserted
+		if(execute->next != NULL) //we have linked list elements
 		{
-			execute->color = 1; //color should be red for any insertion process
-			insert(root, execute);
-		}	
-		else
-			x--;
+			process* pop = execute->next;
 
-		scheduler(N, x, M, t, c, root);
+			while(pop->next != NULL)
+				pop = pop->next;
+			//now, pop has the last element in the linked list
+			pop->executionTime -= t*(pop->priority);
+
+			if(pop->executionTime > 0) //still has to be inserted
+			{
+				pop->color = 1; //color should be red for any insertion process
+				insert(root, pop);
+			}
+			else
+				x--;
+
+			pop = NULL; //since this was the last node
+		}
+
+		else
+		{
+			execute = delete(root, execute);
+
+			execute->executionTime -= t*(execute->priority);
+
+			if(execute->executionTime > 0) //still has to be inserted
+			{
+				execute->color = 1; //color should be red for any insertion process
+				insert(root, execute);
+			}	
+			else
+				x--;
+
+			scheduler(N, x, M, t, c, root);
+		}
 	}
 
 }
@@ -420,7 +493,7 @@ void scheduler(int N, int x, int M, int t, int c, process** root)
 
 void main()
 {
-	int N = 1000, x = 0, M = 1000; //max number of live processes, current number of processes, number of processes to be completed
+	int N = 5, x = 0, M = 5; //max number of live processes, current number of processes, number of processes to be completed
 	int t = 50; //time for each scheduling = priority*t;
 	int c = 0; //total number of processes created
 
@@ -428,9 +501,110 @@ void main()
 
 	process* processTree = NULL;
 
-	scheduler(N, x, M, t, c, &processTree);
+	//scheduler(N, x, M, t, c, &processTree);
 
+	process* n1 = (process *)malloc(sizeof(process));
+ 	n1->processId = 1;
+ 	n1->executionTime = 10;
+ 	n1->color = 0;
+ 	n1->priority = 2;
+ 	n1->parent = NULL;
+ 	n1->left = NULL;
+ 	n1->right = NULL;
+ 	n1->next = NULL;
+  
+ 	insert(&processTree, n1);
+ 
+ 	process* n2 = (process *)malloc(sizeof(process));
+ 	n2->processId = 1;
+ 	n2->executionTime = 9;
+ 	n2->color = 1;
+ 	n2->priority = 2;
+ 	n2->parent = NULL;
+ 	n2->left = NULL;
+ 	n2->right = NULL;
+ 	n2->next = NULL;
+ 
+ 	insert(&processTree, n2);
+ 
+ 	//printf("%d\n%d\n", n1->executionTime, n1->->executionTime);
+ 
+ 	process* n3 = (process *)malloc(sizeof(process));
+ 	n3->processId = 1;
+    n3->executionTime = 8;
+ 	n3->color = 1;
+ 	n3->priority = 2;
+ 	n3->parent = NULL;
+ 	n3->left = NULL;
+ 	n3->right = NULL;
+ 	n3->next = NULL;
+ 
+ 	insert(&processTree, n3);
+ 
+ 	printf("%d %d %d\n", processTree->executionTime, processTree->left->executionTime, processTree->right->executionTime);
+ 
+ 	process* n4 = (process *)malloc(sizeof(process));
+ 	n4->processId = 2;
+ 	n4->executionTime = 8;
+ 	n4->color = 1;
+ 	n4->priority = 1;
+ 	n4->parent = NULL;
+    n4->left = NULL;
+ 	n4->right = NULL;
+ 	n4->next = NULL;
+
+ 
+ 	insert(&processTree, n4);
+ 
+ 	printf("%d %d %d %d\n", processTree->executionTime, processTree->left->color, processTree->right->executionTime, processTree->left->next->priority);
+
+ 	process* n5 = (process *)malloc(sizeof(process));
+ 	n5->processId = 3;
+ 	n5->executionTime = 8;
+ 	n5->color = 1;
+ 	n5->priority = 3;
+ 	n5->parent = NULL;
+    n5->left = NULL;
+ 	n5->right = NULL;
+ 	n5->next = NULL;
+ 
+ 	insert(&processTree, n5);
+ 
+ 	printf("%d %d %d %d %d\n", processTree->executionTime, processTree->left->priority, processTree->right->color, processTree->left->next->priority, processTree->left->next->next->priority);
 	
+ 	process* execute = processTree->left;
+
+		if(execute->next != NULL) //we have linked list elements
+		{
+			printf("???\n");
+			process* pop_prev = execute;
+			process* pop = execute->next;
+
+			while(pop->next != NULL)
+			{
+				pop = pop->next;
+				pop_prev = pop_prev->next;
+			}
+
+			printf("%d\n", pop_prev->priority);
+			//now, pop has the last element in the linked list
+			pop->executionTime -= 3;//t*(pop->priority);
+
+
+			if(pop->executionTime > 0) //still has to be inserted
+			{
+				pop->color = 1; //color should be red for any insertion process
+				printf("insert %d\n", pop->processId);
+				insert(&processTree, pop);
+			}
+			else
+				x--;
+
+			pop_prev->next = pop->next; //since this was the last node
+		}
+
+	printf("%d %d %d %d %d\n", processTree->color, processTree->left->color, processTree->right->color, processTree->left->left->processId,processTree->left->next->priority);
+
 }
 
 void insert5(process** root, process* n)
