@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+unsigned long long int time_stamp = 0;
+
 typedef struct n
 {
 	int processId;
@@ -17,7 +19,39 @@ typedef struct n
 
 	//linked list structure for same value
 	struct n* next;
+
+	//time_stamps
+	unsigned long long int creation_time;
+	unsigned long long int completion_time;
+
+	int i;
+	unsigned long long int exec_times[1000];
+
+	int j;
+	unsigned long long int preempt_times[1000];
 } process;
+
+//to print process data
+void print_data(process* node)
+{
+	printf("\n\nProcess ID: %d\n", node->processId);
+	printf("Proccess Priority: %d\n", node->priority);
+	printf("Process Creation Time: %llu\n", node->creation_time);
+	
+	printf("Process Execution Times: ");
+	int x=0;
+	for(;x<node->i;x++)
+		printf("%llu ", node->exec_times[x]);
+	printf("\n");
+
+	printf("Process Preempt Times: ");
+	x=0;
+	for(;x<node->j;x++)
+		printf("%llu ", node->preempt_times[x]);
+	printf("\n");
+
+	printf("Process Completion Time: %llu\n\n", node->completion_time);
+}
 
 //grandparent
 process* grandparent(process* n)
@@ -417,12 +451,18 @@ process* create_process(int c)
 	temp->right = NULL;
 	temp->next = NULL;
 
+	temp->creation_time = time_stamp;
+	temp->completion_time = 0;
+	temp->i = 0;
+	temp->j = 0;
+
 	return temp;
 }
 
 //THE LOOP!
 void scheduler(int N, int x, int M, int t, int c, process** root)
 {
+	time_stamp++;
 	printf("x = %d, c = %d\n", x, c);
 
 	if(x<N && c<M) //if number of live processes<=current number of live processes and c<total number of processes created
@@ -452,12 +492,19 @@ void scheduler(int N, int x, int M, int t, int c, process** root)
 
 		if(execute->next != NULL) //we have linked list elements
 		{
+			process* pop_prev = execute;
 			process* pop = execute->next;
-
 			while(pop->next != NULL)
+			{
 				pop = pop->next;
+				pop_prev = pop_prev->next;
+			}
+
 			//now, pop has the last element in the linked list
+			pop->exec_times[(pop->i)++] = time_stamp;
 			pop->executionTime -= t*(pop->priority);
+			time_stamp += t*(pop->priority);
+			pop->preempt_times[(pop->j)++] = time_stamp; 
 
 			if(pop->executionTime > 0) //still has to be inserted
 			{
@@ -465,16 +512,25 @@ void scheduler(int N, int x, int M, int t, int c, process** root)
 				insert(root, pop);
 			}
 			else
+			{
 				x--;
+				pop->completion_time = time_stamp;
+				print_data(pop);
+			}
+	
+			pop_prev->next = pop->next; //since this was the last node
 
-			pop = NULL; //since this was the last node
+			scheduler(N, x, M, t, c, root);
 		}
 
 		else
 		{
 			execute = delete(root, execute);
 
+			execute->exec_times[(execute->i)++] = time_stamp;
 			execute->executionTime -= t*(execute->priority);
+			time_stamp += t*(execute->priority);
+			execute->preempt_times[(execute->j)++] = time_stamp;
 
 			if(execute->executionTime > 0) //still has to be inserted
 			{
@@ -482,7 +538,11 @@ void scheduler(int N, int x, int M, int t, int c, process** root)
 				insert(root, execute);
 			}	
 			else
+			{
 				x--;
+				execute->completion_time = time_stamp;
+				print_data(execute);
+			}
 
 			scheduler(N, x, M, t, c, root);
 		}
@@ -501,9 +561,9 @@ void main()
 
 	process* processTree = NULL;
 
-	//scheduler(N, x, M, t, c, &processTree);
+	scheduler(N, x, M, t, c, &processTree);
 
-	process* n1 = (process *)malloc(sizeof(process));
+	/*process* n1 = (process *)malloc(sizeof(process));
  	n1->processId = 1;
  	n1->executionTime = 10;
  	n1->color = 0;
@@ -604,7 +664,7 @@ void main()
 		}
 
 	printf("%d %d %d %d %d\n", processTree->color, processTree->left->color, processTree->right->color, processTree->left->left->processId,processTree->left->next->priority);
-
+	*/
 }
 
 void insert5(process** root, process* n)
