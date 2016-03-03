@@ -3,6 +3,7 @@
 #include <time.h>
 
 unsigned long long int time_stamp = 0;
+FILE *record;
 
 typedef struct n
 {
@@ -34,7 +35,27 @@ typedef struct n
 //to print process data
 void print_data(process* node)
 {
-	printf("\n\nProcess ID: %d\n", node->processId);
+	fprintf(record, "\n%d\t\t\t", node->processId);
+	fprintf(record, "%d\t\t\t\t\t", node->priority);
+	fprintf(record, "%llu\t\t\t\t", node->creation_time);
+	
+	int x=0;
+	for(;x<node->i;x++)
+		fprintf(record, "%llu ", node->exec_times[x]);
+	int l = 12 - x;
+	for(;l>=0;l--)
+		fprintf(record, "\t");
+
+	x=0;
+	for(;x<node->j;x++)
+		fprintf(record, "%llu ", node->preempt_times[x]);
+	l = 12 - x;
+	for(;l>=0;l--)
+		fprintf(record, "\t");
+
+	fprintf(record, "%llu", node->completion_time);
+
+	/*printf("\n\nProcess ID: %d\n", node->processId);
 	printf("Proccess Priority: %d\n", node->priority);
 	printf("Process Creation Time: %llu\n", node->creation_time);
 	
@@ -50,7 +71,7 @@ void print_data(process* node)
 		printf("%llu ", node->preempt_times[x]);
 	printf("\n");
 
-	printf("Process Completion Time: %llu\n\n", node->completion_time);
+	printf("Process Completion Time: %llu\n\n", node->completion_time);*/
 }
 
 //grandparent
@@ -502,8 +523,14 @@ void scheduler(int N, int x, int M, int t, int c, process** root)
 
 			//now, pop has the last element in the linked list
 			pop->exec_times[(pop->i)++] = time_stamp;
+			int temp = pop->executionTime;
 			pop->executionTime -= t*(pop->priority);
-			time_stamp += t*(pop->priority);
+		
+			if(pop->executionTime<0)
+				time_stamp += temp;
+			else
+				time_stamp += t*(pop->priority);
+
 			pop->preempt_times[(pop->j)++] = time_stamp; 
 
 			if(pop->executionTime > 0) //still has to be inserted
@@ -528,8 +555,14 @@ void scheduler(int N, int x, int M, int t, int c, process** root)
 			execute = delete(root, execute);
 
 			execute->exec_times[(execute->i)++] = time_stamp;
+			int temp = execute->executionTime;
 			execute->executionTime -= t*(execute->priority);
-			time_stamp += t*(execute->priority);
+
+			if(execute->executionTime<0)
+				time_stamp += temp;
+			else
+				time_stamp += t*(execute->priority);
+			
 			execute->preempt_times[(execute->j)++] = time_stamp;
 
 			if(execute->executionTime > 0) //still has to be inserted
@@ -553,118 +586,18 @@ void scheduler(int N, int x, int M, int t, int c, process** root)
 
 void main()
 {
-	int N = 5, x = 0, M = 5; //max number of live processes, current number of processes, number of processes to be completed
-	int t = 50; //time for each scheduling = priority*t;
+	int N = 10, x = 0, M = 20; //max number of live processes, current number of processes, number of processes to be completed
+	int t = 100; //time for each scheduling = priority*t;
 	int c = 0; //total number of processes created
 
 	srand(time(NULL));
 
 	process* processTree = NULL;
 
+	record = fopen("processes.txt", "w");
+	fprintf(record, "Process ID  Process Priority  Creation Time  Execution Times\t\t\t\t\t\t\t\t\t\t\t\tPreempt Times\t\t\t\t\t\t\t\t\tCompletion Time");
 	scheduler(N, x, M, t, c, &processTree);
-
-	/*process* n1 = (process *)malloc(sizeof(process));
- 	n1->processId = 1;
- 	n1->executionTime = 10;
- 	n1->color = 0;
- 	n1->priority = 2;
- 	n1->parent = NULL;
- 	n1->left = NULL;
- 	n1->right = NULL;
- 	n1->next = NULL;
-  
- 	insert(&processTree, n1);
- 
- 	process* n2 = (process *)malloc(sizeof(process));
- 	n2->processId = 1;
- 	n2->executionTime = 9;
- 	n2->color = 1;
- 	n2->priority = 2;
- 	n2->parent = NULL;
- 	n2->left = NULL;
- 	n2->right = NULL;
- 	n2->next = NULL;
- 
- 	insert(&processTree, n2);
- 
- 	//printf("%d\n%d\n", n1->executionTime, n1->->executionTime);
- 
- 	process* n3 = (process *)malloc(sizeof(process));
- 	n3->processId = 1;
-    n3->executionTime = 8;
- 	n3->color = 1;
- 	n3->priority = 2;
- 	n3->parent = NULL;
- 	n3->left = NULL;
- 	n3->right = NULL;
- 	n3->next = NULL;
- 
- 	insert(&processTree, n3);
- 
- 	printf("%d %d %d\n", processTree->executionTime, processTree->left->executionTime, processTree->right->executionTime);
- 
- 	process* n4 = (process *)malloc(sizeof(process));
- 	n4->processId = 2;
- 	n4->executionTime = 8;
- 	n4->color = 1;
- 	n4->priority = 1;
- 	n4->parent = NULL;
-    n4->left = NULL;
- 	n4->right = NULL;
- 	n4->next = NULL;
-
- 
- 	insert(&processTree, n4);
- 
- 	printf("%d %d %d %d\n", processTree->executionTime, processTree->left->color, processTree->right->executionTime, processTree->left->next->priority);
-
- 	process* n5 = (process *)malloc(sizeof(process));
- 	n5->processId = 3;
- 	n5->executionTime = 8;
- 	n5->color = 1;
- 	n5->priority = 3;
- 	n5->parent = NULL;
-    n5->left = NULL;
- 	n5->right = NULL;
- 	n5->next = NULL;
- 
- 	insert(&processTree, n5);
- 
- 	printf("%d %d %d %d %d\n", processTree->executionTime, processTree->left->priority, processTree->right->color, processTree->left->next->priority, processTree->left->next->next->priority);
-	
- 	process* execute = processTree->left;
-
-		if(execute->next != NULL) //we have linked list elements
-		{
-			printf("???\n");
-			process* pop_prev = execute;
-			process* pop = execute->next;
-
-			while(pop->next != NULL)
-			{
-				pop = pop->next;
-				pop_prev = pop_prev->next;
-			}
-
-			printf("%d\n", pop_prev->priority);
-			//now, pop has the last element in the linked list
-			pop->executionTime -= 3;//t*(pop->priority);
-
-
-			if(pop->executionTime > 0) //still has to be inserted
-			{
-				pop->color = 1; //color should be red for any insertion process
-				printf("insert %d\n", pop->processId);
-				insert(&processTree, pop);
-			}
-			else
-				x--;
-
-			pop_prev->next = pop->next; //since this was the last node
-		}
-
-	printf("%d %d %d %d %d\n", processTree->color, processTree->left->color, processTree->right->color, processTree->left->left->processId,processTree->left->next->priority);
-	*/
+	fclose(record);	
 }
 
 void insert5(process** root, process* n)
