@@ -1,5 +1,32 @@
 #include <stdio.h>
 
+long long int time = 0;
+
+typedef struct e
+{
+	long long int t; // time of event
+	int valid; // 1 if valid, 0 if invalid
+	int b1, b2; // index of balls involved in the collision
+} event;
+
+typedef struct b
+{
+	int color;
+
+	// position
+	float x;
+	float y;
+
+	// velocity
+	float vx;
+	float vy;
+
+	// linked list events
+	event *coll;
+} ball;
+
+// we need to create a heap of events
+
 int parent(int i)
 {
 	if(i%2 == 0)
@@ -18,14 +45,14 @@ int right(int i)
 	return 2*i + 2;
 }
 
-void swap(int arr[], int i, int j)
+void swap(event Q[], int i, int j)
 {
-	int temp = arr[j];
-	arr[j] = arr[i];
-	arr[i] = temp;
+	event temp = Q[j];
+	Q[j] = Q[i];
+	Q[i] = temp;
 }
 
-void heapify(int arr[], int heap_size, int i)
+void heapify(event Q[], int heap_size, int i)
 {
 	int l = left(i);
 	int r = right(i);
@@ -34,65 +61,64 @@ void heapify(int arr[], int heap_size, int i)
 	
 	if(l<heap_size)
 	{
-		if(arr[l]<arr[i])
+		if(Q[l].t<Q[i].t)
 			minimum = l;
 		else minimum = i;
 	}	
 	
 	if(r<heap_size)
 	{
-		if(arr[r]<arr[minimum])
+		if(Q[r].t<Q[minimum].t)
 			minimum = r;
 	}
 	
 	
 	if( minimum != i)
 	{
-		swap(arr, i, minimum);
-		heapify(arr, heap_size, minimum);
+		swap(Q, i, minimum);
+		heapify(Q, heap_size, minimum);
 	}
 }
 
-void create_heap(int arr[], int heap_size)
-{
-	int i = heap_size/2;
-	
-	for(; i>=0; i--)
-		heapify(arr, heap_size, i);
-}
-
-void heap_insert(int arr[], int *heap_size, int k)
+void heap_insert(event Q[], int *heap_size, event k)
 {
 	*heap_size += 1;
 	
 	int i = (*(heap_size)) - 1;
 	
-	while(i>0 && arr[parent(i)] > k)
+	while(i>0 && Q[parent(i)].t > k.t)
 	{
-		arr[i] = arr[parent(i)];
+		Q[i] = Q[parent(i)];
 		i = parent(i);
 	}
 	
-	arr[i] = k;
+	Q[i] = k;
 }
 
-int extract_min(int arr[], int *heap_size)
+event extract_min(event Q[], int *heap_size)
 {
 	if(*heap_size < 0)
-		return -1;
-	int min = arr[0];
-	arr[0] = arr[(*heap_size) - 1];
+	{
+		event temp;
+		temp.t = -1;
+		temp.valid = -1;
+		temp.b1 = -1;
+		temp.b2 = -1;
+		return temp;
+	}
+	event min = Q[0];
+	Q[0] = Q[(*heap_size) - 1];
 	*heap_size = *heap_size - 1;
-	heapify(arr, *heap_size, 0);
+	heapify(Q, *heap_size, 0);
 	return min;
 }
 
-void PQ_insert(int Q[], int* q_size, int k)
+void PQ_insert(event Q[], int* q_size, event k)
 {
 	heap_insert(Q, q_size, k);
 }
 
-int PQ_extract(int Q[], int* q_size)
+event PQ_extract(event Q[], int* q_size)
 {
 	return extract_min(Q, q_size);
 }
@@ -100,31 +126,32 @@ int PQ_extract(int Q[], int* q_size)
 
 void main()
 {
-	int q[10];
-	int size = 0, i = 0;
+	event q[10];
+	int size = 0, i=0;
 
 	for(i = 10; i>=1; i--)
-		PQ_insert(q, &size, i);
+	{
+		event temp;
+		temp.t = i;
+		temp.valid = 1;
+		temp.b1 = i;
+		temp.b2 = i-1;
+
+		PQ_insert(q, &size, temp);
+	}
 
 	for(i = 0; i<size; i++)
-		printf("%d\t", q[i]);
+		printf("%lld\t", q[i].t);
 
 	printf("\n");
 
-	printf("%d\n", PQ_extract(q, &size));
+	event temp = PQ_extract(q, &size);
+	printf("%d\n", temp.b2);
 
 	for(i = 0; i<size; i++)
-		printf("%d\t", q[i]);
+		printf("%lld\t", q[i].t);
 
 	printf("\n");
 
-	printf("%d\n", PQ_extract(q, &size));
 
-	for(i = 0; i<size; i++)
-		printf("%d\t", q[i]);
-
-	printf("\n");
-
-	printf("%d\n", PQ_extract(q, &size));
-		
 }
