@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-long long int time = 0;
+double time = 0;
 
 typedef struct e
 {
-	long long int t; // time of event
+	double t; // time of event
 	int valid; // 1 if valid, 0 if invalid
 	int b1, b2; // index of balls involved in the collision
 } event;
@@ -25,22 +25,29 @@ typedef struct b
 	double radius;
 
 	// position
-	float x;
-	float y;
+	double x;
+	double y;
 
 	// velocity
-	float vx;
-	float vy;
+	double vx;
+	double vy;
 
 	// linked list events
 	list *coll;
 } ball;
+
+event PQ[100];
+int PQ_size = 0;
+ball b[5];
 
 // insert an event into the list 
 void list_insert(ball* b, event* et)
 {
 	list **head = &(b->coll);
 	list *p = (*head);
+
+	ball bl = *b;
+	//printf("Ball's vx: %lf\n", bl.vx);
 
 	if (*head == NULL)
 	{
@@ -164,9 +171,13 @@ event PQ_extract(event Q[], int* q_size)
 	return extract_min(Q, q_size);
 }
 
-void predict_collision(ball b1, ball b2)
+//make PQ and PQ_size golbal variables
+event predict_collision(int i, int j) //indexes of the balls involved
 {
-	double t1, t2, t;
+	ball b1 = b[i];
+	ball b2 = b[j];
+
+	double t1, t2, tf;
 
 	double del, v0, r0, r1, r2, r;
 
@@ -183,9 +194,40 @@ void predict_collision(ball b1, ball b2)
 	t2 = -del - sqrt( del*del - v0*(r0 - r) );
 	t2 /= v0;
 
-	t = (t1<t2)?t1:t2;
+	if(t1<0 && t2<0)
+		tf = (t1>t2)?t1:t2;
+	else 
+		tf = (t1<t2)?t1:t2;
 
-	printf("Collision time: %lf\n", t);
+	printf("Collision time: %lf\n", tf);
+
+	if(tf>=0) //only then do we insert the event into the PQ and the LL
+	{
+		event collision;
+		collision.t = tf;
+		collision.valid = 1;
+		collision.b1 = i;
+		collision.b2 = j;
+
+		PQ_insert(PQ, &PQ_size, collision);
+		//list_insert(&(b[i]), &collision);		
+		//list_insert(&(b[j]), &collision);
+
+		//printf("!!!!! - %lf\n", (b[i].coll)->evt->t);
+
+		return collision;
+	}
+	else
+	{
+		event collision;
+		collision.t = tf;
+		collision.valid = 0;
+		collision.b1 = i;
+		collision.b2 = j;
+
+		return collision;
+	}
+
 }
 
 
@@ -218,19 +260,53 @@ void main()
 
 	printf("\n");*/
 
-	ball b;
-	b.color = 0;
-	b.radius = 2.0;
-	b.x = 10; b.y = 0; b.vx = 0.0; b.vy = 0.0;
-	b.coll = NULL;
+	
 
-	ball c;
-	c.color = 0;
-	c.radius = 1.0;
-	c.x = 0; c.y = 0; c.vx = 2.0; c.vy = 0.0;
-	c.coll = NULL;
+	b[0].color = 0;
+	b[0].radius = 2.0;
+	b[0].x = 10; b[0].y = 0; b[0].vx = 0.0; b[0].vy = 0.0;
+	b[0].coll = NULL;
 
-	predict_collision(b, c);
+	b[1].color = 0;
+	b[1].radius = 1.0;
+	b[1].x = 0; b[1].y = 0; b[1].vx = 2.0; b[1].vy = 0.0;
+	b[1].coll = NULL;
+
+	b[2].color = 0;
+	b[2].radius = 1.0;
+	b[2].x = 20; b[2].y = 0; b[2].vx = 0.5; b[2].vy = 0.0;
+	b[2].coll = NULL;
+
+	event A = predict_collision(0, 1);
+	list_insert(&(b[0]), &A);
+	list_insert(&(b[1]), &A);
+
+	event B = predict_collision(1, 2);
+	list_insert(&(b[1]), &B);
+	list_insert(&(b[2]), &B);
+
+	int i=0;
+
+	for(; i<PQ_size; i++)
+		printf("%lf\t", PQ[i].t);
+
+	printf("\n");
+
+	list *tmp = b[0].coll;
+	while(tmp != NULL)
+    {
+    	printf("%lf\t", tmp->evt->t);
+		tmp = tmp->next;
+	}
+	printf("\n");
+
+	tmp = b[1].coll;
+	while(tmp != NULL)
+    {
+    	printf("%lf\t", tmp->evt->t);
+		tmp = tmp->next;
+	}
+	printf("\n");	
 
 	/*event e1;
 	e1.t = 3;
