@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-double time = 0;
+#define T 10
+
+double time_now = 0;
 
 typedef struct e
 {
@@ -36,7 +38,7 @@ typedef struct b
 	list *coll;
 } ball;
 
-event PQ[100];
+event *PQ[100], aux[100]; //auxillary array
 int PQ_size = 0;
 ball b[5];
 
@@ -93,14 +95,14 @@ int right(int i)
 	return 2*i + 2;
 }
 
-void swap(event Q[], int i, int j)
+void swap(event *Q[], int i, int j)
 {
-	event temp = Q[j];
+	event *temp = Q[j];
 	Q[j] = Q[i];
 	Q[i] = temp;
 }
 
-void heapify(event Q[], int heap_size, int i)
+void heapify(event *Q[], int heap_size, int i)
 {
 	int l = left(i);
 	int r = right(i);
@@ -109,14 +111,14 @@ void heapify(event Q[], int heap_size, int i)
 	
 	if(l<heap_size)
 	{
-		if(Q[l].t<Q[i].t)
+		if((*Q[l]).t<(*Q[i]).t)
 			minimum = l;
 		else minimum = i;
 	}	
 	
 	if(r<heap_size)
 	{
-		if(Q[r].t<Q[minimum].t)
+		if((*Q[r]).t<(*Q[minimum]).t)
 			minimum = r;
 	}
 	
@@ -128,22 +130,26 @@ void heapify(event Q[], int heap_size, int i)
 	}
 }
 
-void heap_insert(event Q[], int *heap_size, event k)
+int heap_insert(event *Q[], int *heap_size, event *k)
 {
 	*heap_size += 1;
 	
 	int i = (*(heap_size)) - 1;
-	
-	while(i>0 && Q[parent(i)].t > k.t)
+
+	printf("\nTo be inserted: %lf, b1: %d, b2: %d\n", (*k).t, (*k).b1, (*k).b2);
+
+	while(i>0 && (*PQ[parent(i)]).t > (*k).t)
 	{
-		Q[i] = Q[parent(i)];
+		PQ[parent(i)] = PQ[i];//Q[i] = Q[parent(i)];
 		i = parent(i);
 	}
 	
-	Q[i] = k;
+	PQ[i] = k;
+	printf("PQ[%d] = %lf\n", i, (*PQ[i]).t);
+	return i;
 }
 
-event extract_min(event Q[], int *heap_size)
+event extract_min(event *Q[], int *heap_size)
 {
 	if(*heap_size < 0)
 	{
@@ -154,25 +160,24 @@ event extract_min(event Q[], int *heap_size)
 		temp.b2 = -1;
 		return temp;
 	}
-	event min = Q[0];
+	event min = *Q[0];
 	Q[0] = Q[(*heap_size) - 1];
 	*heap_size = *heap_size - 1;
 	heapify(Q, *heap_size, 0);
 	return min;
 }
 
-void PQ_insert(event Q[], int* q_size, event k)
+int PQ_insert(event *Q[], int* q_size, event *k)
 {
-	heap_insert(Q, q_size, k);
+	return heap_insert(Q, q_size, k);
 }
 
-event PQ_extract(event Q[], int* q_size)
+event PQ_extract(event *Q[], int* q_size)
 {
 	return extract_min(Q, q_size);
 }
 
-//make PQ and PQ_size golbal variables
-event predict_collision(int i, int j) //indexes of the balls involved
+event predict_collision(int i, int j, int *p) //indexes of the balls involved
 {
 	ball b1 = b[i];
 	ball b2 = b[j];
@@ -199,23 +204,25 @@ event predict_collision(int i, int j) //indexes of the balls involved
 	else 
 		tf = (t1<t2)?t1:t2;
 
-	printf("Collision time: %lf\n", tf);
+	tf += time_now;
 
-	if(tf>=0) //only then do we insert the event into the PQ and the LL
+	//printf("Collision time: %lf\n", tf);
+
+	if(tf>=time_now) //only then do we insert the event into the PQ and the LL
 	{
-		event collision;
-		collision.t = tf;
-		collision.valid = 1;
-		collision.b1 = i;
-		collision.b2 = j;
+		event *collision = (event *)malloc(sizeof(event));
+		collision->t = tf;
+		collision->valid = 1;
+		collision->b1 = i;
+		collision->b2 = j;
 
-		PQ_insert(PQ, &PQ_size, collision);
+		*p = PQ_insert(PQ, &PQ_size, collision);
 		//list_insert(&(b[i]), &collision);		
 		//list_insert(&(b[j]), &collision);
 
 		//printf("!!!!! - %lf\n", (b[i].coll)->evt->t);
 
-		return collision;
+		return *collision;
 	}
 	else
 	{
@@ -230,38 +237,74 @@ event predict_collision(int i, int j) //indexes of the balls involved
 
 }
 
+void update_state(event current)
+{
+	double delta_t = current.t - time_now;
+
+	int i = current.b1;
+	int j = current.b2;
+
+	// update the state of the two balls
+	b[i].x = b[i].x + (b[i].vx)*(delta_t);
+	b[i].y = b[i].y + (b[i].vy)*(delta_t);
+
+	b[j].x = b[j].x + (b[j].vx)*(delta_t);
+	b[j].y = b[j].y + (b[j].vy)*(delta_t);
+
+	// fast forward to event time
+	time_now = current.t;
+}
+
+void update_velocity(event current)
+{
+	int u = current.b1, v = current.b2;
+
+	//collision is occuring at this time
+	b[u].vx = -b[u].vx;
+	b[v].vx = -b[v].vx;
+
+	b[u].vy = -b[u].vy;
+	b[v].vy = -b[v].vy;
+		
+	printf("Update velocities of %d and %d\n", u, v);
+
+	// now traverse the list and mark the events as invalid
+	list **head = &(b[u].coll);
+	while( *head != NULL)
+	{
+		// invalidate the events
+		printf("Invalidate %f ", (*head)->evt->t );
+		(*head)->evt->valid = 0;
+
+		printf("%p %p\n\n", &( (*head)->evt->valid ), &((*PQ[0]).valid));
+
+		// move forward
+		*head = (*head)->next;
+	}
+	// deallocate the list
+	(*head) = NULL;
+
+	// now traverse the list and mark the events as invalid
+	list **head2 = &(b[v].coll);
+	while( *head2 != NULL)
+	{
+		// invalidate the events
+		printf("Invalidate %f ", (*head2)->evt->t );
+		(*head2)->evt->valid = 0;
+
+		printf("%p %p\n", &( (*head2)->evt->valid ), &((*PQ[0]).valid));
+
+		// move forward
+		*head2 = (*head2)->next;
+	}
+	// deallocate the list
+	(*head2) = NULL;
+
+}
+
 
 void main()
 {
-	/*event q[10];
-	int size = 0, i=0;
-
-	for(i = 10; i>=1; i--)
-	{
-		event temp;
-		temp.t = i;
-		temp.valid = 1;
-		temp.b1 = i;
-		temp.b2 = i-1;
-
-		PQ_insert(q, &size, temp);
-	}
-
-	for(i = 0; i<size; i++)
-		printf("%lld\t", q[i].t);
-
-	printf("\n");
-
-	event temp = PQ_extract(q, &size);
-	printf("%lld\n", temp.t);
-
-	for(i = 0; i<size; i++)
-		printf("%lld\t", q[i].t);
-
-	printf("\n");*/
-
-	
-
 	b[0].color = 0;
 	b[0].radius = 2.0;
 	b[0].x = 10; b[0].y = 0; b[0].vx = 0.0; b[0].vy = 0.0;
@@ -277,64 +320,59 @@ void main()
 	b[2].x = 20; b[2].y = 0; b[2].vx = 0.5; b[2].vy = 0.0;
 	b[2].coll = NULL;
 
-	event A = predict_collision(0, 1);
-	list_insert(&(b[0]), &A);
-	list_insert(&(b[1]), &A);
+	int i = 0, j = 0, k=0, pos = 0, itr = 0;
 
-	event B = predict_collision(1, 2);
-	list_insert(&(b[1]), &B);
-	list_insert(&(b[2]), &B);
+	while(itr <2) // while in defined time window
+	{
+		//predict events
+		for(i=0; i<3; i++)
+		{
+			for(j=i+1; j<3; j++)
+			{
+				aux[k] = predict_collision(i, j, &pos);
+				if(aux[k].valid == 1) //if the event is valid
+				{
+					printf("Insert event: %lf in %d, and %d\n", aux[k].t, i, j);
+					list_insert(&(b[i]), &(aux[k]));
+					list_insert(&(b[j]), &(aux[k]));
 
-	int i=0;
+					printf("List: ");
+					list *head = b[i].coll;
+					while( head != NULL)
+					{
+						printf("%lf\t", (head)->evt->t );
+						// move forward
+						head = (head)->next;
+					}	
+					printf("\n");
+				}
+				k++;
+			}
+		}
 
-	for(; i<PQ_size; i++)
-		printf("%lf\t", PQ[i].t);
+		int h = 0;
+		printf("Priority Queue: ");
+		for(; h<PQ_size; h++)
+			printf("%lf,%d,%d\t", (*PQ[h]).t, (*PQ[h]).b1, (*PQ[h]).b2);
+		printf("\n");
 
-	printf("\n");
+		event current = PQ_extract(PQ, &PQ_size);
+		if(current.valid == 1) //if the event is valid
+		{
+			printf("Valid event: %lf\n", current.t);
 
-	list *tmp = b[0].coll;
-	while(tmp != NULL)
-    {
-    	printf("%lf\t", tmp->evt->t);
-		tmp = tmp->next;
+			//fast forward all the balls
+			update_state(current);
+
+			//update the velocities of involved balls and deallocate their lists after marking them as invalid
+			update_velocity(current);
+
+			//printf("%lf\n", time_now);
+		}
+
+		itr++;		
+		
 	}
-	printf("\n");
 
-	tmp = b[1].coll;
-	while(tmp != NULL)
-    {
-    	printf("%lf\t", tmp->evt->t);
-		tmp = tmp->next;
-	}
-	printf("\n");	
-
-	/*event e1;
-	e1.t = 3;
-	e1.valid = 1;
-	e1.b1 = 0;
-	e1.b2 = 8;
-
-	list_insert(&b, &e1);
-
-	list *tmp = b.coll;
-	long long int p = tmp->evt->t;
-
-	printf("%lld\n", p);
-
-
-	event e2;
-	e2.t = 4;
-	e2.valid = 1;
-	e2.b1 = 0;
-	e2.b2 = 8;
-
-	list_insert(&b, &e2);
-
-	while(tmp != NULL)
-    {
-    	printf("%lld\t", tmp->evt->t);
-		tmp = tmp->next;
-	}
-	printf("\n");*/
-
+	
 }
