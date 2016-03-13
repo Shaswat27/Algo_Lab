@@ -392,6 +392,31 @@ event* predict_wall_collision(int i)
 	return collision;
 }
 
+void update_velocity_wall(event current)
+{
+	int u = current.b1;
+
+	if(b[u].x == X-b[u]-radius || b[u].x == b[u].radius)
+	{
+		b[u].vx = -b[u].vx;
+	}
+	else if(b[u].x == X-b[u]-radius || b[u].x == b[u].radius)
+	{
+		b[u].vy = -b[u].vy;
+	}
+
+	list **head = &(b[u].coll);
+	while( *head != NULL)
+	{
+		// invalidate the events
+		(*head)->evt->valid = 0;
+
+		*head = (*head)->next;
+	}
+	// deallocate the list
+	(*head) = NULL;
+}
+
 
 void main()
 {
