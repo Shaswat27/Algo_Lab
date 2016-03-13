@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define T 10
+#define T 30
+
+//assuming square box
+#define X 30
+#define Y 30
 
 double time_now = 0;
 
@@ -136,7 +140,7 @@ int heap_insert(event *Q[], int *heap_size, event *k)
 	
 	int i = (*(heap_size)) - 1;
 
-	printf("\nTo be inserted: %lf, b1: %d, b2: %d\n", (*k).t, (*k).b1, (*k).b2);
+	//printf("\nTo be inserted: %lf, b1: %d, b2: %d\n", (*k).t, (*k).b1, (*k).b2);
 
 	while(i>0 && (*PQ[parent(i)]).t > (*k).t)
 	{
@@ -145,7 +149,7 @@ int heap_insert(event *Q[], int *heap_size, event *k)
 	}
 	
 	PQ[i] = k;
-	printf("PQ[%d] = %lf\n", i, (*PQ[i]).t);
+	//printf("PQ[%d] = %lf\n", i, (*PQ[i]).t);
 	return i;
 }
 
@@ -177,7 +181,7 @@ event PQ_extract(event *Q[], int* q_size)
 	return extract_min(Q, q_size);
 }
 
-event predict_collision(int i, int j, int *p) //indexes of the balls involved
+event* predict_collision(int i, int j, int *p) //indexes of the balls involved
 {
 	ball b1 = b[i];
 	ball b2 = b[j];
@@ -222,15 +226,15 @@ event predict_collision(int i, int j, int *p) //indexes of the balls involved
 
 		//printf("!!!!! - %lf\n", (b[i].coll)->evt->t);
 
-		return *collision;
+		return collision;
 	}
 	else
 	{
-		event collision;
-		collision.t = tf;
-		collision.valid = 0;
-		collision.b1 = i;
-		collision.b2 = j;
+		event *collision = (event *)malloc(sizeof(event));;
+		collision->t = tf;
+		collision->valid = 0;
+		collision->b1 = i;
+		collision->b2 = j;
 
 		return collision;
 	}
@@ -241,15 +245,14 @@ void update_state(event current)
 {
 	double delta_t = current.t - time_now;
 
-	int i = current.b1;
-	int j = current.b2;
+	int i = 0;
 
 	// update the state of the two balls
-	b[i].x = b[i].x + (b[i].vx)*(delta_t);
-	b[i].y = b[i].y + (b[i].vy)*(delta_t);
-
-	b[j].x = b[j].x + (b[j].vx)*(delta_t);
-	b[j].y = b[j].y + (b[j].vy)*(delta_t);
+	for(; i<5; i++)
+	{
+		b[i].x = b[i].x + (b[i].vx)*(delta_t);
+		b[i].y = b[i].y + (b[i].vy)*(delta_t);
+	}
 
 	// fast forward to event time
 	time_now = current.t;
@@ -260,23 +263,33 @@ void update_velocity(event current)
 	int u = current.b1, v = current.b2;
 
 	//collision is occuring at this time
-	b[u].vx = -b[u].vx;
-	b[v].vx = -b[v].vx;
+	double A = atan2(b[u].y-b[v].y, b[u].x-b[v].x);
+	double D1 = atan2(b[u].vy, b[u].vx);
+	double D2 = atan2(b[v].vy, b[v].vx);
 
-	b[u].vy = -b[u].vy;
-	b[v].vy = -b[v].vy;
+	double u1 = sqrt( b[u].vx*b[u].vx + b[u].vy*b[u].vy );
+	double u2 = sqrt( b[v].vx*b[v].vx + b[v].vy*b[v].vy );
+
+	double _t = u2*cos(D2-A);
+	double _s = u1*cos(D1-A);
+
+	b[u].vx = _t*cos(A) - u1*sin(D1-A)*sin(A);
+	b[u].vy = _t*sin(A) + u1*sin(D1-A)*cos(A);
+
+	b[v].vx = _s*cos(A) - u2*sin(D2-A)*sin(A);
+	b[v].vy = _s*sin(A) + u2*sin(D2-A)*cos(A);
 		
-	printf("Update velocities of %d and %d\n", u, v);
+	printf("Update velocities of %d and %d\n to (%lf, %lf) and (%lf, %lf)", u, v, b[u].vx, b[u].vy, b[v].vx, b[v].vy);
 
 	// now traverse the list and mark the events as invalid
 	list **head = &(b[u].coll);
 	while( *head != NULL)
 	{
 		// invalidate the events
-		printf("Invalidate %f ", (*head)->evt->t );
+		//printf("Invalidate %f ", (*head)->evt->t );
 		(*head)->evt->valid = 0;
 
-		printf("%p %p\n\n", &( (*head)->evt->valid ), &((*PQ[0]).valid));
+		//printf("%p %p\n\n", &( (*head)->evt->valid ), &((*PQ[0]).valid));
 
 		// move forward
 		*head = (*head)->next;
@@ -289,10 +302,10 @@ void update_velocity(event current)
 	while( *head2 != NULL)
 	{
 		// invalidate the events
-		printf("Invalidate %f ", (*head2)->evt->t );
+		// printf("Invalidate %f ", (*head2)->evt->t );
 		(*head2)->evt->valid = 0;
 
-		printf("%p %p\n", &( (*head2)->evt->valid ), &((*PQ[0]).valid));
+		// printf("%p %p\n", &( (*head2)->evt->valid ), &((*PQ[0]).valid));
 
 		// move forward
 		*head2 = (*head2)->next;
@@ -302,51 +315,120 @@ void update_velocity(event current)
 
 }
 
+event* predict_wall_collision(int i)
+{
+	ball b1 = b[i];
+
+	double x1, y1, x2, y2;
+	double x, y;
+	double tf, t1, t2;
+
+	//in X direction
+	if(abs(b1.vy)<=abs(b1.vx)) //slope less than 45deg
+	{
+		if(b1.vx != 0)
+		{
+			y1 = (b1.vy/b1.vx)*(b1.radius) + b1.y - (b1.vy/b1.vx)*b1.x;
+			y2 = (b1.vy/b1.vx)*(X-b1.radius) + b1.y - (b1.vy/b1.vx)*b1.x;
+		}
+		else
+		{
+			y1 = b1.y;
+			y2 = y1;	
+		}
+
+		if(b1.vy>0)
+		{
+			y = (y1>y2)?y1:y2;
+			x = 0.0 + b1.radius;
+		}
+		else
+		{
+			y = (y1>y2)?y2:y1;
+			x = X - b1.radius;
+		}
+
+		//printf("(%lf, %lf)\n", x, y);
+	}
+
+	//in Y direction
+	else
+	{
+		if(b1.vy != 0)
+		{
+			x1 = (b1.vx/b1.vy)*(b1.radius) + b1.x - (b1.vx/b1.vy)*b1.y;
+			x2 = (b1.vx/b1.vy)*(Y-b1.radius) + b1.x - (b1.vx/b1.vy)*b1.y;
+		}
+		else
+		{
+			x1 = b1.x;
+			x2 = y1;	
+		}
+
+		if(b1.vx>0)
+		{
+			x = (x1>x2)?x1:x2;
+			y = 0.0 + b1.radius;
+		}
+		else
+		{
+			x = (x1>x2)?x2:x1;
+			y = Y - b1.radius;
+		}
+	}
+
+	// check time to reach (x, y)
+	double v = sqrt(b1.vx*b1.vx + b1.vy*b1.vy);
+	double dist = sqrt( (b1.x - x)*(b1.x - x) + (b1.y - y)*(b1.y - y) );
+
+	tf = time_now + dist/v;
+
+	event *collision = (event *)malloc(sizeof(event));
+	collision->t = tf;
+	collision->valid = 1;
+	collision->b1 = i;
+	collision->b2 = i;
+
+	return collision;
+}
+
 
 void main()
 {
 	b[0].color = 0;
 	b[0].radius = 2.0;
-	b[0].x = 10; b[0].y = 0; b[0].vx = 0.0; b[0].vy = 0.0;
+	b[0].x = 12; b[0].y = 3; b[0].vx = 0.0; b[0].vy = 0.0;
 	b[0].coll = NULL;
 
 	b[1].color = 0;
 	b[1].radius = 1.0;
-	b[1].x = 0; b[1].y = 0; b[1].vx = 2.0; b[1].vy = 0.0;
+	b[1].x = 2; b[1].y = 3; b[1].vx = 2.0; b[1].vy = 0.0;
 	b[1].coll = NULL;
 
 	b[2].color = 0;
 	b[2].radius = 1.0;
-	b[2].x = 20; b[2].y = 0; b[2].vx = 0.5; b[2].vy = 0.0;
+	b[2].x = 22; b[2].y = 3; b[2].vx = 0; b[2].vy = 0.0;
 	b[2].coll = NULL;
 
 	int i = 0, j = 0, k=0, pos = 0, itr = 0;
 
-	while(itr <2) // while in defined time window
+	/*do // while in defined time window
 	{
 		//predict events
 		for(i=0; i<3; i++)
 		{
+			predict_wall_collision(i);
 			for(j=i+1; j<3; j++)
 			{
-				aux[k] = predict_collision(i, j, &pos);
-				if(aux[k].valid == 1) //if the event is valid
+				event *ret = predict_collision(i, j, &pos);
+				if(ret->valid == 1) //if the event is valid
 				{
-					printf("Insert event: %lf in %d, and %d\n", aux[k].t, i, j);
-					list_insert(&(b[i]), &(aux[k]));
-					list_insert(&(b[j]), &(aux[k]));
-
-					printf("List: ");
-					list *head = b[i].coll;
-					while( head != NULL)
-					{
-						printf("%lf\t", (head)->evt->t );
-						// move forward
-						head = (head)->next;
-					}	
-					printf("\n");
+					printf("Insert event: %lf in %d, and %d\n", ret->t, i, j);
+					list_insert(&(b[i]), ret);
+					list_insert(&(b[j]), ret);
+		
 				}
-				k++;
+				//k++;
 			}
 		}
 
@@ -357,6 +439,7 @@ void main()
 		printf("\n");
 
 		event current = PQ_extract(PQ, &PQ_size);
+
 		if(current.valid == 1) //if the event is valid
 		{
 			printf("Valid event: %lf\n", current.t);
@@ -369,9 +452,16 @@ void main()
 
 			//printf("%lf\n", time_now);
 		}
-
-		itr++;		
+		itr++;
+		printf("\n");
 		
+	}while(itr < 10);*/
+
+	int l = 0;
+	for(; l<3; l++)
+	{
+		event *cs = predict_wall_collision(l);
+		printf("%d - %lf\n", l, cs->t);
 	}
 
 	
