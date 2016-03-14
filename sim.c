@@ -8,6 +8,8 @@
 #define X 30
 #define Y 30
 
+FILE *record;
+
 double time_now = 0;
 
 typedef struct e
@@ -354,7 +356,7 @@ event* predict_wall_collision(int i)
 			y2 = y1;	
 		}
 
-		if(b1.vy>0)
+		if(b1.vx<0)
 		{
 			y = (y1>y2)?y1:y2;
 			x = 0.0 + b1.radius;
@@ -382,7 +384,7 @@ event* predict_wall_collision(int i)
 			x2 = y1;	
 		}
 
-		if(b1.vx>0)
+		if(b1.vy<0)
 		{
 			x = (x1>x2)?x1:x2;
 			y = 0.0 + b1.radius;
@@ -460,6 +462,9 @@ void main()
 
 	int i = 0, j = 0, k=0, pos = 0, itr = 0;
 
+	record = fopen("collisions.txt", "w");
+	fprintf(record, "\tTime\t\tParticle no.\t\tPosition\t\t\tVelocity\n");
+
 
 	for(i=0; i<3; i++)
 	{
@@ -488,7 +493,7 @@ void main()
 		int h = 0;
 		printf("Priority Queue: \n");
 		for(; h<PQ_size; h++)
-			printf("%lf,%d,%d\t", (*PQ[h]).t, (*PQ[h]).b1, (*PQ[h]).b2);
+			printf("%lf,%d,%d\t", (*PQ[h]).t, (*PQ[h]).b1, (*PQ[h]).valid);
 		printf("\n");
 
 		event current = PQ_extract(PQ, &PQ_size);
@@ -504,6 +509,11 @@ void main()
 			update_velocity_wall(current);
 
 			printf("\nTime updated to: %lf\n", time_now);
+
+			int it = 0;
+			for(; it<3; it++)
+				fprintf(record, "\t%lf\t\t%d\t\t  (%lf, %lf)\t\t   (%lf, %lf)\n", time_now, it, b[it].x, b[it].y, b[it].vx, b[it].vy);
+			fprintf(record, "\n");
 
 			//update events
 			event *cl = predict_wall_collision(current.b1);
@@ -542,6 +552,11 @@ void main()
 			update_velocity(current);
 
 			printf("\nTime updated to: %lf\n", time_now);
+
+			int it = 0;
+			for(; it<3; it++)
+				fprintf(record, "\t%lf\t\t%d\t\t  (%lf, %lf)\t\t   (%lf, %lf)\n", time_now, it, b[it].x, b[it].y, b[it].vx, b[it].vy);
+			fprintf(record, "\n");
 
 			//update wall collisions
 			//update events
