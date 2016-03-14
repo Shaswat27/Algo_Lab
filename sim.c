@@ -144,12 +144,17 @@ int heap_insert(event *Q[], int *heap_size, event *k)
 
 	while(i>0 && (*PQ[parent(i)]).t > (*k).t)
 	{
-		PQ[parent(i)] = PQ[i];//Q[i] = Q[parent(i)];
+		//printf("i = %d\n", i);
+		PQ[i] = PQ[parent(i)];//Q[i] = Q[parent(i)];
 		i = parent(i);
 	}
-	
+
 	PQ[i] = k;
+		
 	//printf("PQ[%d] = %lf\n", i, (*PQ[i]).t);
+
+	//printf("i = %d\n", i);
+
 	return i;
 }
 
@@ -164,10 +169,22 @@ event extract_min(event *Q[], int *heap_size)
 		temp.b2 = -1;
 		return temp;
 	}
+	
+
 	event min = *Q[0];
+
+	//printf("Min = %lf, replace by %lf to make size = %d\nAfter heapify: ", min.t, (*Q[*heap_size - 1]).t, *heap_size-1);
+
 	Q[0] = Q[(*heap_size) - 1];
 	*heap_size = *heap_size - 1;
+
 	heapify(Q, *heap_size, 0);
+
+	/*int i=0;
+	for(; i<*heap_size;i++)
+		printf("%lf\t", (*Q[i]).t);
+	printf("\n");*/
+
 	return min;
 }
 
@@ -212,7 +229,7 @@ event* predict_collision(int i, int j, int *p) //indexes of the balls involved
 
 	//printf("Collision time: %lf\n", tf);
 
-	if(tf>=time_now) //only then do we insert the event into the PQ and the LL
+	if(tf>=time_now && tf<T) //only then do we insert the event into the PQ and the LL
 	{
 		event *collision = (event *)malloc(sizeof(event));
 		collision->t = tf;
@@ -389,6 +406,12 @@ event* predict_wall_collision(int i)
 	collision->b1 = i;
 	collision->b2 = i;
 
+
+	if(v != 0 && tf<T && tf>time_now)
+		PQ_insert(PQ, &PQ_size, collision);
+	else
+		collision->valid = 0;
+
 	return collision;
 }
 
@@ -396,11 +419,11 @@ void update_velocity_wall(event current)
 {
 	int u = current.b1;
 
-	if(b[u].x == X-b[u]-radius || b[u].x == b[u].radius)
+	if(b[u].x == X-b[u].radius || b[u].x == b[u].radius)
 	{
 		b[u].vx = -b[u].vx;
 	}
-	else if(b[u].x == X-b[u]-radius || b[u].x == b[u].radius)
+	else if(b[u].y == Y-b[u].radius || b[u].y == b[u].radius)
 	{
 		b[u].vy = -b[u].vy;
 	}
@@ -437,35 +460,78 @@ void main()
 
 	int i = 0, j = 0, k=0, pos = 0, itr = 0;
 
-	/*do // while in defined time window
+
+	for(i=0; i<3; i++)
 	{
-		//predict events
-		for(i=0; i<3; i++)
+		event *cl = predict_wall_collision(i);
+		if(cl->valid == 1 && cl->t<T)
 		{
-			predict_wall_collision(i);
-			for(j=i+1; j<3; j++)
+			list_insert(&(b[i]), cl);
+			printf("Insert event: %lf in %d\n", cl->t, i);
+		}
+		for(j=i+1; j<3; j++)
+		{
+			event *ret = predict_collision(i, j, &pos);
+			if(ret->valid == 1 && ret->t <T) //if the event is valid
 			{
-				event *ret = predict_collision(i, j, &pos);
-				if(ret->valid == 1) //if the event is valid
-				{
-					printf("Insert event: %lf in %d, and %d\n", ret->t, i, j);
-					list_insert(&(b[i]), ret);
-					list_insert(&(b[j]), ret);
-		
-				}
-				//k++;
+				printf("Insert event: %lf in %d, and %d\n", ret->t, i, j);
+				list_insert(&(b[i]), ret);
+				list_insert(&(b[j]), ret);
 			}
 		}
+	}
+	//initital updates
 
+
+	do // while in defined time window
+	{
 		int h = 0;
-		printf("Priority Queue: ");
+		printf("Priority Queue: \n");
 		for(; h<PQ_size; h++)
 			printf("%lf,%d,%d\t", (*PQ[h]).t, (*PQ[h]).b1, (*PQ[h]).b2);
 		printf("\n");
 
 		event current = PQ_extract(PQ, &PQ_size);
 
-		if(current.valid == 1) //if the event is valid
+		if(current.b1 == current.b2 && current.valid == 1)
+		{
+			printf("Valid event: %lf\n", current.t);
+
+			//fast forward all the balls
+			update_state(current);
+
+			//update the velocities of involved balls and deallocate their lists after marking them as invalid
+			update_velocity_wall(current);
+
+			printf("\nTime updated to: %lf\n", time_now);
+
+			//update events
+			event *cl = predict_wall_collision(current.b1);
+
+			if(cl->valid == 1 && cl->t<T && cl->t > time_now)
+			{
+				list_insert(&(b[current.b1]), cl);
+				printf("Insert event: %lf in %d\n", cl->t, current.b1);
+			}
+
+
+			for(i = 0; i<3;i++)
+			{
+				if(i != current.b1)
+				{
+					event *ret = predict_collision(i, current.b1, &pos);
+					if(ret->valid == 1 && ret->t <T) //if the event is valid
+					{
+						printf("Insert event: %lf in %d, and %d\n", ret->t, i, current.b1);
+						list_insert(&(b[i]), ret);
+						list_insert(&(b[current.b1]), ret);
+					}
+				}
+			}
+
+		}
+
+		else if(current.valid == 1) //if the event is valid
 		{
 			printf("Valid event: %lf\n", current.t);
 
@@ -475,19 +541,62 @@ void main()
 			//update the velocities of involved balls and deallocate their lists after marking them as invalid
 			update_velocity(current);
 
-			//printf("%lf\n", time_now);
+			printf("\nTime updated to: %lf\n", time_now);
+
+			//update wall collisions
+			//update events
+			event *cl = predict_wall_collision(current.b1);
+			if(cl->valid == 1 && cl->t<T && cl->t > time_now)
+			{
+				list_insert(&(b[current.b1]), cl);
+				printf("Insert event: %lf in %d\n", cl->t, current.b1);
+			}
+
+			event *cl2 = predict_wall_collision(current.b2);
+			if(cl2->valid == 1 && cl2->t<T && cl2->t > time_now)
+			{
+				list_insert(&(b[current.b2]), cl2);
+				printf("Insert event: %lf in %d\n", cl2->t, current.b2);
+			}
+
+
+
+
+			for(i = 0; i<3;i++)
+			{
+				if(i != current.b1)
+				{
+					event *ret = predict_collision(i, current.b1, &pos);
+					if(ret->valid == 1 && ret->t <T) //if the event is valid
+					{
+						printf("Insert event: %lf in %d, and %d\n", ret->t, i, current.b1);
+						list_insert(&(b[i]), ret);
+						list_insert(&(b[current.b1]), ret);
+					}
+				}
+			}
+
+
+
+			for(i = 0; i<3;i++)
+			{
+				if(i != current.b1 && i != current.b2)
+				{
+					event *ret = predict_collision(i, current.b2, &pos);
+					if(ret->valid == 1 && ret->t <T) //if the event is valid
+					{
+						printf("Insert event: %lf in %d, and %d\n", ret->t, i, current.b2);
+						list_insert(&(b[i]), ret);
+						list_insert(&(b[current.b2]), ret);
+					}
+				}
+			}
+
+
 		}
+
 		itr++;
-		printf("\n");
-		
-	}while(itr < 10);*/
-
-	int l = 0;
-	for(; l<3; l++)
-	{
-		event *cs = predict_wall_collision(l);
-		printf("%d - %lf\n", l, cs->t);
-	}
-
+		printf("\n");		
+	}while(time_now < T && PQ_size>0);
 	
 }
