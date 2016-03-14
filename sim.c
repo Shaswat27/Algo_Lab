@@ -9,6 +9,7 @@
 #define Y 30
 
 FILE *record;
+FILE *ball1, *ball2, *ball3, *ball4, *ball5;
 
 double time_now = 0;
 
@@ -46,7 +47,7 @@ typedef struct b
 
 event *PQ[100], aux[100]; //auxillary array
 int PQ_size = 0;
-ball b[5];
+ball b[5], b_prev[5];
 
 // insert an event into the list 
 void list_insert(ball* b, event* et)
@@ -442,28 +443,103 @@ void update_velocity_wall(event current)
 	(*head) = NULL;
 }
 
+void log_data(ball i_prev, ball i, int ind)
+{
+	double delta_t = 0.0;
+	if(sqrt(i_prev.vx*i_prev.vx + i_prev.vy*i_prev.vy) != 0)
+		delta_t = sqrt( (i.x-i_prev.x)*(i.x-i_prev.x) +  (i.y-i_prev.y)*(i.y-i_prev.y) )/sqrt(i_prev.vx*i_prev.vx + i_prev.vy*i_prev.vy);
+	double x = i_prev.x, y = i_prev.y;
+
+	if(ind==0)
+	{
+		int k = 1;
+		for(; k<=10;k++)
+		{
+			x = i_prev.x + delta_t*k*i_prev.vx/10.0;
+			y = i_prev.y + delta_t*k*i_prev.vy/10.0;
+			fprintf(ball1, "%lf %lf\n", x, y);
+		}
+	}
+	if(ind==1)
+	{
+		int k = 1;
+		for(; k<=10;k++)
+		{
+			x = i_prev.x + delta_t*k*i_prev.vx/10.0;
+			y = i_prev.y + delta_t*k*i_prev.vy/10.0;
+			fprintf(ball2, "%lf %lf\n", x, y);
+		}
+	}
+	if(ind==2)
+	{
+		int k = 1;
+		for(; k<=10;k++)
+		{
+			x = i_prev.x + delta_t*k*i_prev.vx/10.0;
+			y = i_prev.y + delta_t*k*i_prev.vy/10.0;
+			fprintf(ball3, "%lf %lf\n", x, y);
+		}
+	}
+	if(ind==3)
+	{
+		int k = 1;
+		for(; k<=10;k++)
+		{
+			x = i_prev.x + delta_t*k*i_prev.vx/10.0;
+			y = i_prev.y + delta_t*k*i_prev.vy/10.0;
+			fprintf(ball4, "%lf %lf\n", x, y);
+		}
+	}
+	if(ind==4)
+	{
+		int k = 1;
+		for(; k<=10;k++)
+		{
+			x = i_prev.x + delta_t*k*i_prev.vx/10.0;
+			y = i_prev.y + delta_t*k*i_prev.vy/10.0;
+			fprintf(ball5, "%lf %lf\n", x, y);
+		}
+	}
+}
+
 
 void main()
 {
 	b[0].color = 0;
 	b[0].radius = 2.0;
-	b[0].x = 12; b[0].y = 3; b[0].vx = 0.0; b[0].vy = 0.0;
+	b[0].x = 3; b[0].y = 12; b[0].vx = 0.0; b[0].vy = 0.0;
 	b[0].coll = NULL;
 
 	b[1].color = 0;
 	b[1].radius = 1.0;
-	b[1].x = 2; b[1].y = 3; b[1].vx = 2.0; b[1].vy = 0.0;
+	b[1].x = 3; b[1].y = 2; b[1].vx = 0.0; b[1].vy = 2.0;
 	b[1].coll = NULL;
 
 	b[2].color = 0;
 	b[2].radius = 1.0;
-	b[2].x = 22; b[2].y = 3; b[2].vx = 0; b[2].vy = 0.0;
+	b[2].x = 3; b[2].y = 22; b[2].vx = 0; b[2].vy = 0.0;
 	b[2].coll = NULL;
+
+	b_prev[0] = b[0];
+	b_prev[1] = b[1];
+	b_prev[2] = b[2];
 
 	int i = 0, j = 0, k=0, pos = 0, itr = 0;
 
 	record = fopen("collisions.txt", "w");
 	fprintf(record, "\tTime\t\tParticle no.\t\tPosition\t\t\tVelocity\n");
+
+	ball1 = fopen("ball1.txt", "w");
+	fprintf(ball1, "%lf %lf\n", b[0].x, b[0].y);
+
+	ball2 = fopen("ball2.txt", "w");
+	fprintf(ball2, "%lf %lf\n", b[1].x, b[1].y);
+
+	ball3 = fopen("ball3.txt", "w");
+	fprintf(ball3, "%lf %lf\n", b[2].x, b[2].y);
+
+	ball4 = fopen("ball4.txt", "w");
+	ball5 = fopen("ball5.txt", "w");
 
 
 	for(i=0; i<3; i++)
@@ -502,11 +578,17 @@ void main()
 		{
 			printf("Valid event: %lf\n", current.t);
 
+			b_prev[0] = b[0];
+			b_prev[1] = b[1];
+			b_prev[2] = b[2];
+
 			//fast forward all the balls
 			update_state(current);
 
 			//update the velocities of involved balls and deallocate their lists after marking them as invalid
 			update_velocity_wall(current);
+
+			log_data(b_prev[current.b1], b[current.b1], current.b1);
 
 			printf("\nTime updated to: %lf\n", time_now);
 
@@ -545,11 +627,18 @@ void main()
 		{
 			printf("Valid event: %lf\n", current.t);
 
+			b_prev[0] = b[0];
+			b_prev[1] = b[1];
+			b_prev[2] = b[2];
+
 			//fast forward all the balls
 			update_state(current);
 
 			//update the velocities of involved balls and deallocate their lists after marking them as invalid
 			update_velocity(current);
+
+			log_data(b_prev[current.b1], b[current.b1], current.b1);
+			log_data(b_prev[current.b2], b[current.b2], current.b2);
 
 			printf("\nTime updated to: %lf\n", time_now);
 
