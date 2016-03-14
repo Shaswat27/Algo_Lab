@@ -595,7 +595,7 @@ void main()
 
 		}
 
-		itr++;
+		//itr++;
 		printf("\n");		
 	}while(time_now < T && PQ_size>0);
 	
