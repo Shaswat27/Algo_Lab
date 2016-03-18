@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 typedef struct n
 {
@@ -79,6 +80,139 @@ void display(node *min1)
 }
 
 
+void heapLink(node** y, node** x)
+{
+	//remove y from root list
+	(*y)->left->right = (*y)->right;
+	(*y)->right->left = (*y)->left;
+
+	//make y a child of x
+	(*x)->degree += 1;
+	if((*x)->child != NULL)
+	{
+		(*y)->parent = *x;
+		(*y)->right = (*x)->child;
+		(*y)->left = (*x)->child->left;
+		(*x)->child->left = *y;
+		(*y)->left->right = *y;
+	}
+	else
+	{
+		(*x)->child = *y;
+		(*y)->parent = *x;
+
+		(*y)->right = (*y);
+		(*y)->left = (*y);
+	}
+
+
+	(*y)->mark = 0;
+}
+
+void consolidate()
+{
+	//create auxillary array A
+	int D = (int)( ceil(log2(size)) );
+	node** A = (node **)malloc(D*sizeof(node *)); //an array of node pointers
+	int i = 0;
+	for(; i<D; i++)
+		A[i] = NULL;
+
+	node* w = min;
+
+	//for each node in root list of H
+	do
+	{
+		node* x = w;
+		int d = x->degree;
+
+		while(A[d] != NULL)
+		{
+			node *y = A[d]; //another node with same degree as x
+			if(x->key > y->key)
+			{
+				//exchange x & y
+				node* temp = y;
+				y = x;
+				x = temp;
+			}
+			heapLink(&y,&x);
+			A[d] = NULL;
+			d += 1;
+		}
+		A[d] = x;
+
+		//printf("x->right = %p, w = %d, min = %p\n", x->right, w->key, min);
+		w = x;
+		w = w->right;
+	}while(w != min);
+
+	node* temp = min;
+	min = NULL;
+	for(i=0; i<D; i++)
+	{
+		if(A[i] != NULL)
+		{
+			if(temp != NULL)
+			{
+				(A[i])->right = temp;
+				(A[i])->left = (temp)->left;
+				(temp)->left = A[i];
+				(A[i])->left->right = A[i];
+			}
+			else
+			{
+				temp = A[i];
+				(temp)->left = temp;
+				(temp)->right = temp;
+			}
+
+			if(min == NULL || (A[i])->key < min->key)
+				min = A[i];
+		}
+	}
+}
+
+node* extractMin()
+{
+	node* z = min;
+	if(z != NULL)
+	{
+		if(z->child != NULL)
+		{
+			do//for each child of z
+			{
+				node **x;
+				*x = z->child;
+
+				(*x)->right = min->right;
+				(*x)->left = min->left;
+				(*x)->left->right = *x;
+				(*x)->right->left = *x;
+				
+				z = z->right;
+			}while(z != min);
+		}
+
+		//remove z from root list
+		z->left->right = z->right;
+		z->right->left = z->left;
+
+
+		if(z == z->right)
+		{
+			min = NULL;
+		}
+		else
+		{
+			min = z->right;
+			consolidate();
+		}	
+
+		size -= 1;
+	}
+	return z;
+}
 
 
 
@@ -104,6 +238,13 @@ int main()
 	display(min);
 
 	printf("min -> %d\n", min->key);
+
+	z = extractMin();
+	printf("Extracted min -> %d\n", z->key);
+
+	//display(min);
+
+	printf("min: %d, Child: %d, Child->left: %d, Child->right: %d\n", min->key, x->child->key, x->child->left->key, x->child->right->key);
 
 	return 0;
 }
