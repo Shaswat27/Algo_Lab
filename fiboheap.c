@@ -13,9 +13,6 @@ typedef struct n
     int mark; //0 as false, 1 as true
 } node;
 
-node *min, *min2, *min3;
-int size = 0, size2 = 0, size3 = 0;
-
 void makeFibHeap(node** min, int *size)
 {
 	*size = 0;
@@ -50,31 +47,6 @@ void fibHeapInsert(node* x, node** min, int *size)
 
 	*size += 1;
 }
-
-void display(node *min1)
-{
-	node *q,*chil;
-	if(min == NULL)
-	{
-		printf("Fibonacci heap is empty\n");
-		return;
-	}
-	
-	q = min;
-	
-	printf("Fibonacci heap display: ");
-	do
-	{
-		printf("%d ",q->key);
-		if(q->child != NULL)
-		{
-			display(q->child);
-		}
-		q=q->right;
-	}while(q != (min));
-	printf("\n");
-}
-
 
 void heapLink(node** y, node** x)
 {
@@ -251,7 +223,7 @@ node* fibUnion(node** min1, node** min2, int *size1, int *size2, int *size)
 	else
 	{
 		node *t1 = min->left;
-		node *t2 = (*min2)->right;
+		node *t2 = (*min2)->left;
 	
 		t1->right = (*min2);
 		(*min2)->left = t1;
@@ -352,27 +324,9 @@ void decreaseKey(node** min, node* x, int k)
 
 int main()
 {
-	/*makeFibHeap(&min, &size);
-
-	int i = 100;
-	for(; i>=1; i--)
-	{
-		node *x = (node *)malloc(sizeof(node));
-		x->key = i;
-		fibHeapInsert(x, &min, &size);
-	}
-
-	int temp = size;
-
-	for(i = 0; i<temp; i++)
-	{
-		node* y = extractMin(&min, &size);
-
-		printf("Min: %d\n", y->key);
-	}
-
-	printf("\n");*/
-
+	
+	/*node *min, *min2, *min3;
+	int size = 0, size2 = 0, size3 = 0;
 	
 	//FIRST HEAP
 	makeFibHeap(&min, &size);
@@ -391,8 +345,6 @@ int main()
 	z->key = 0;
 
 	fibHeapInsert(z, &min, &size);
-
-	display(min);
 
 	printf("min -> %d\n", min->key);
 
@@ -429,7 +381,112 @@ int main()
 
 	node* t = extractMin(&min3, &size3);
 
-	printf("min: %d, min->child: %d, min->child->child: %d\n", min3->key, min3->child->key, min3->child->child->key);
+	printf("min: %d, min->child: %d, min->child->child: %d\n", min3->key, min3->child->key, min3->child->child->key); */
+
+	int k, m, n; //k is number of lists, m is number of elements in each block, n is number of blocks in each list
+
+	printf("Enter k: "); scanf("%d", &k);
+	printf("Enter m: "); scanf("%d", &m);
+	printf("Enter the number of blocks in each list: "); scanf("%d", &n);
+
+	int** lists = (int **)malloc(k*sizeof(int *));
+	int i = 0, j=0;
+	for(i=0; i<k; i++)
+	{
+		int* list = (int *)malloc(n*m*sizeof(int));
+		printf("Enter elements of list %d (sorted): ", i+1);
+		for(j=0; j<n*m; j++)
+		{
+			int temp;
+			scanf("%d", &temp);
+			list[j] = temp;
+		}
+		lists[i] = list;
+		printf("\n");
+	}
+
+
+	for(i=0; i<k; i++)
+	{
+		printf("Enter elements of list %d : ", i+1);
+		for(j=0; j<n*m; j++)
+		{
+			printf("%d ", lists[i][j]);
+		}
+		printf("\n");
+	}
+
+
+	//start the process
+	int* final_list = (int *)malloc( k*m*n*sizeof(int));
+	node** mins = (node **)malloc( k*sizeof(node *) ); 
+	node** temporary = (node **)malloc( k*m*n*sizeof(node *) );
+	int* size = (int *)malloc(k*sizeof(int));
+	int c = 0;
+
+	for(i=0; i<n; i++)
+	{
+		node* last;
+
+		for(j = 0; j<k; j++)
+		{
+			makeFibHeap(&mins[j], &size[j]);
+
+			int l = 0;
+			for(l = 0; l<m; l++)
+			{
+				node* temp = (node *)malloc(sizeof(node));
+
+				temp->key = lists[j][i*m+l];
+
+				fibHeapInsert(temp, &mins[j], &size[j]);
+
+				if(l == m-1 && j==k-1)
+					last = temp;
+			}
+
+			
+		}
+
+		//fibheap created for each block, now merge into one heap
+		node *min, *min1 = mins[0];
+		int x = 0, size_f = 0, size_1 = size[0];
+		//min = fibUnion(&mins[0], &mins[1], &size[0], &size[1], &size_f);
+
+		for(x=1; x<k; x++)
+		{
+			min = fibUnion(&min1, &mins[x], &size_1, &size[x], &size_f);
+
+			size_1 = size_f;
+		}
+
+		int last_element_written;
+		if(c>0)
+		 	last_element_written = final_list[c-1];
+		else
+			last_element_written = -1000;
+
+		if(min->key > last_element_written)
+			decreaseKey(&min, last, min->key - 1);
+
+
+		//now extract min
+		int t = size_f;
+		for(x = 0; x<t; x++)
+		{
+			node* temp = extractMin(&min, &size_f);
+			final_list[c++] = temp->key;
+		}
+	}
+
+
+	printf("\nFinal list: ");
+	for(i=0; i<k*m*n; i++)
+	{
+		printf("%d ", final_list[i]);
+	}
+	printf("\n");
+
 
 	return 0;
 }
