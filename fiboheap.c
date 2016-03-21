@@ -173,7 +173,7 @@ void consolidate(node** min, int *size)
 			}
 		}
 	}
-	printf("Here, min = %d\n", (*min)->key);
+	//printf("Here, min = %d\n", (*min)->key);
 	return;
 }
 
